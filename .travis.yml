@@ -1,0 +1,12 @@
+sudo: false
+
+language: go
+go:
+  - "1.13"
+
+install: true
+env:
+  - GO111MODULE=on
+
+script:
+  - go test -coverprofile=c.out ./...
