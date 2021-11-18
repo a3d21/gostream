@@ -51,6 +51,23 @@ func ToMapV2(typ interface{}, keyMapper, valueMapper normalizedFn) collectorV2 {
 	}
 }
 
+// ToSetV2 ...
+func ToSetV2(typ interface{}) collectorV2 {
+	t := reflect.TypeOf(typ)
+	if t.Kind() != reflect.Map || t.Elem().Kind() != reflect.Bool {
+		panic("typ should be map[T]bool")
+	}
+
+	return func(stream Stream) interface{} {
+		v := reflect.New(reflect.MapOf(t.Key(), t.Elem()))
+		v.Elem().Set(reflect.MakeMap(t))
+		container := v.Interface()
+		truly := func(_ interface{}) interface{} { return true }
+		stream.Linq().ToMapBy(container, identity, truly)
+		return v.Elem().Interface()
+	}
+}
+
 // GroupByV2 ...
 func GroupByV2(typ interface{}, classifier normalizedFn, downstream collectorV2) collectorV2 {
 	t := reflect.TypeOf(typ)

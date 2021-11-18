@@ -2,6 +2,9 @@
 
 gostream 是一个数据流式处理库。它可以声明式地对数据进行转换、过滤、排序、分组、收集，而无需关心操作细节。
 
+## Changelog
+2021-11-18
+- add ToSet() collector
 
 ## Roadmap
 - [ ] 移除go-linq依赖

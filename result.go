@@ -62,6 +62,11 @@ func (s Stream) ToSlice(typ interface{}) interface{} {
 	return s.CollectV2(ToSliceV2(typ))
 }
 
+// ToSet 收集为map[T]bool
+func (s Stream) ToSet(typ interface{}) interface{} {
+	return s.CollectV2(ToSetV2(typ))
+}
+
 // ToSlice 收集为Map, typ为类型参数。要求item类型为KeyValue
 func (s Stream) ToMap(typ interface{}) interface{} {
 	return s.CollectV2(ToMapV2(

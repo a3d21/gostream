@@ -364,6 +364,20 @@ func TestCollectorToMap(t *testing.T) {
 	}
 }
 
+func TestCollectToSet(t *testing.T) {
+	input := []int{1, 2, 3}
+	want := map[int]bool{1: true, 2: true, 3: true}
+	got := From(input).Collect(ToSet(map[int]bool{})).(map[int]bool)
+	assert.Equal(t, want, got)
+}
+
+func TestCollectToSetV2(t *testing.T) {
+	input := []int{1, 2, 3}
+	want := map[int]bool{1: true, 2: true, 3: true}
+	got := From(input).CollectV2(ToSetV2(map[int]bool{})).(map[int]bool)
+	assert.Equal(t, want, got)
+}
+
 func TestFlatMap(t *testing.T) {
 	input := [][]int{{3, 2, 1}, {6, 5, 4}, {9, 8, 7}}
 	want := []int{1, 2, 3, 4, 5, 6, 7, 8, 9}

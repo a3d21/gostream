@@ -70,6 +70,25 @@ func ToMap(typ interface{}, keyMapper, valueMapper normalizedFn) collector {
 	}
 }
 
+// ToSet 收集器。收集为map[T]bool
+func ToSet(typ interface{}) collector {
+	t := reflect.TypeOf(typ)
+	if t.Kind() != reflect.Map || t.Elem().Kind() != reflect.Bool {
+		panic("typ should be map[T]bool")
+	}
+
+	trueVal := reflect.ValueOf(true)
+	supplier := func() interface{} { return reflect.Indirect(reflect.MakeMap(t)) }
+	accumulator := func(a interface{}, it interface{}) interface{} {
+		a.(reflect.Value).SetMapIndex(reflect.ValueOf(it), trueVal)
+		return a
+	}
+	return collector{
+		supplier:    supplier,
+		accumulator: accumulator,
+	}
+}
+
 // GroupBy 分组收集器，将item分组收集。
 // 参数说明：
 //   classifier  分组函数
