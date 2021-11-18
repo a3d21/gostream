@@ -143,28 +143,34 @@ From(cargoByLocationByTo).FlatMap(func(it interface{}) Stream {
 
 ## Benchmark
 ```
-$ go test -bench=.
+$ go test -bench .
 goos: darwin
 goarch: amd64
 pkg: github.com/a3d21/gostream
-BenchmarkToSliceRaw-12                      8216            132435 ns/op
-BenchmarkToSliceStreamForeach-12             639           1819347 ns/op
-BenchmarkCollectToSlice-12                    88          13006774 ns/op
-BenchmarkCollectToSliceV2-12                 308           3847322 ns/op
-BenchmarkLinqToSlice-12                      340           3513771 ns/op
-BenchmarkToMapRaw-12                         184           6195945 ns/op
-BenchmarkCollectToMap-12                      97          12378528 ns/op
-BenchmarkCollectToMapV2-12                    98          12409819 ns/op
-BenchmarkLinqToMap-12                        100          12293144 ns/op
-BenchmarkGroupByRaw-12                        86          12673383 ns/op
-BenchmarkGroupBy-12                           22          48737249 ns/op
-BenchmarkGroupByV2-12                          9         116926833 ns/op
-BenchmarkLinqGroupBy-12                       19          61038649 ns/op
-BenchmarkPartition-12                        171           6949116 ns/op
-BenchmarkCountRaw-12                         810           1468941 ns/op
-BenchmarkCount-12                            170           7044074 ns/op
-BenchmarkCountV2-12                          813           1468029 ns/op
-BenchmarkGroupCount-12                        33          35121443 ns/op
-BenchmarkGroupCountV2-12                      15          70305638 ns/op
-
+cpu: Intel(R) Core(TM) i7-1068NG7 CPU @ 2.30GHz
+BenchmarkToSliceRaw-8                       9064            130558 ns/op
+BenchmarkToSliceStreamForeach-8              724           1729650 ns/op
+BenchmarkCollectToSlice-8                    100          10976960 ns/op
+BenchmarkCollectToSliceV2-8                  356           3442700 ns/op
+BenchmarkLinqToSlice-8                       369           3233192 ns/op
+BenchmarkToMapRaw-8                          169           7029026 ns/op
+BenchmarkCollectToMap-8                       96          12598103 ns/op
+BenchmarkCollectToMapV2-8                     87          12358812 ns/op
+BenchmarkLinqToMap-8                          84          12632280 ns/op
+BenchmarkToSetRaw-8                          198           5979733 ns/op
+BenchmarkCollectToSet-8                       91          11230164 ns/op
+BenchmarkCollectToSetV2-8                    100          11303409 ns/op
+BenchmarkLinqToSet-8                          96          11588965 ns/op
+BenchmarkGroupByRaw-8                         90          13014776 ns/op
+BenchmarkGroupBy-8                            22          47840903 ns/op
+BenchmarkGroupByV2-8                           8         126779306 ns/op
+BenchmarkLinqGroupBy-8                        18          63476018 ns/op
+BenchmarkPartition-8                         198           6084481 ns/op
+BenchmarkCountRaw-8                          850           1379226 ns/op
+BenchmarkCount-8                             196           6036287 ns/op
+BenchmarkCountV2-8                           865           1384256 ns/op
+BenchmarkGroupCount-8                         31          34496447 ns/op
+BenchmarkGroupCountV2-8                       14          87656078 ns/op
+PASS
+ok      github.com/a3d21/gostream       34.211s
 ```

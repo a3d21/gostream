@@ -82,6 +82,38 @@ func BenchmarkLinqToMap(b *testing.B) {
 	}
 }
 
+////// ToSet
+
+func BenchmarkToSetRaw(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		c := make(map[int]bool)
+		for j := 0; j < size; j++ {
+			c[j] = true
+		}
+	}
+}
+
+func BenchmarkCollectToSet(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		Stream(linq.Range(1, size)).Collect(ToSet(map[int]bool(nil)))
+	}
+}
+
+func BenchmarkCollectToSetV2(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		Stream(linq.Range(1, size)).CollectV2(ToSetV2(map[int]bool(nil)))
+	}
+}
+
+func BenchmarkLinqToSet(b *testing.B) {
+	identity := func(it interface{}) interface{} { return it }
+	truly := func(_ interface{}) interface{} { return true }
+	for i := 0; i < b.N; i++ {
+		c := make(map[int]bool)
+		linq.Range(1, size).ToMapBy(&c, identity, truly)
+	}
+}
+
 ////// GroupBy
 
 func BenchmarkGroupByRaw(b *testing.B) {
