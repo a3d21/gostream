@@ -148,29 +148,36 @@ goos: darwin
 goarch: amd64
 pkg: github.com/a3d21/gostream
 cpu: Intel(R) Core(TM) i7-1068NG7 CPU @ 2.30GHz
-BenchmarkToSliceRaw-8                       9064            130558 ns/op
-BenchmarkToSliceStreamForeach-8              724           1729650 ns/op
-BenchmarkCollectToSlice-8                    100          10976960 ns/op
-BenchmarkCollectToSliceV2-8                  356           3442700 ns/op
-BenchmarkLinqToSlice-8                       369           3233192 ns/op
-BenchmarkToMapRaw-8                          169           7029026 ns/op
-BenchmarkCollectToMap-8                       96          12598103 ns/op
-BenchmarkCollectToMapV2-8                     87          12358812 ns/op
-BenchmarkLinqToMap-8                          84          12632280 ns/op
-BenchmarkToSetRaw-8                          198           5979733 ns/op
-BenchmarkCollectToSet-8                       91          11230164 ns/op
-BenchmarkCollectToSetV2-8                    100          11303409 ns/op
-BenchmarkLinqToSet-8                          96          11588965 ns/op
-BenchmarkGroupByRaw-8                         90          13014776 ns/op
-BenchmarkGroupBy-8                            22          47840903 ns/op
-BenchmarkGroupByV2-8                           8         126779306 ns/op
-BenchmarkLinqGroupBy-8                        18          63476018 ns/op
-BenchmarkPartition-8                         198           6084481 ns/op
-BenchmarkCountRaw-8                          850           1379226 ns/op
-BenchmarkCount-8                             196           6036287 ns/op
-BenchmarkCountV2-8                           865           1384256 ns/op
-BenchmarkGroupCount-8                         31          34496447 ns/op
-BenchmarkGroupCountV2-8                       14          87656078 ns/op
+BenchmarkToSliceRaw-8                       8953            135354 ns/op
+BenchmarkToSliceStreamForeach-8              727           1646809 ns/op
+BenchmarkCollectToSlice-8                    100          11056603 ns/op
+BenchmarkCollectToSliceV2-8                  343           3488931 ns/op
+BenchmarkLinqToSlice-8                       370           3218450 ns/op
+BenchmarkToMapRaw-8                          165           7093403 ns/op
+BenchmarkCollectToMap-8                      207           5789365 ns/op
+BenchmarkCollectToMapV2-8                    218           5541738 ns/op
+BenchmarkLinqToMap-8                         223           5376933 ns/op
+BenchmarkToSetRaw-8                          196           6045459 ns/op
+BenchmarkCollectToSet-8                      100          11328736 ns/op
+BenchmarkCollectToSetV2-8                    100          11786037 ns/op
+BenchmarkLinqToSet-8                          87          11689963 ns/op
+BenchmarkGroupByRaw-8                        487           2366660 ns/op
+BenchmarkGroupBy-8                            42          28509248 ns/op
+BenchmarkGroupByV2-8                         100          11627525 ns/op
+BenchmarkLinqGroupBy-8                       153           7730886 ns/op
+BenchmarkPartition-8                         196           6017234 ns/op
+BenchmarkCountRaw-8                          865           1374016 ns/op
+BenchmarkCount-8                             198           6071583 ns/op
+BenchmarkCountV2-8                           868           1378172 ns/op
+BenchmarkGroupCount-8                         61          19945508 ns/op
+BenchmarkGroupCountV2-8                      130           9101270 ns/op
+BenchmarkSumRaw-8                          40366             30390 ns/op
+BenchmarkCustomSumCollector-8                189           6361963 ns/op
+BenchmarkCustomSumCollectorV2-8              435           2735501 ns/op
+BenchmarkGroupSumRaw-8                      1059           1128347 ns/op
+BenchmarkGroupSum-8                           58          20542984 ns/op
+BenchmarkGroupSumV2-8                        100          10555309 ns/op
 PASS
-ok      github.com/a3d21/gostream       34.211s
+ok      github.com/a3d21/gostream       44.039s
+
 ```
