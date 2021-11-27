@@ -8,6 +8,13 @@ import (
 
 type collectorV2 func(stream Stream) interface{}
 
+// CollectorV2 ...
+func CollectorV2(supplier func() interface{}, accumulator accumulatorFn) collectorV2 {
+	return func(s Stream) interface{} {
+		return s.ReduceWith(supplier(), accumulator)
+	}
+}
+
 // CountV2 ...
 func CountV2() collectorV2 {
 	return func(s Stream) interface{} {

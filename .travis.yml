@@ -3,6 +3,7 @@ sudo: false
 language: go
 go:
   - "1.13"
+  - "tip"
 
 install: true
 env:

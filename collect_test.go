@@ -441,3 +441,77 @@ func TestGroupCountV2(t *testing.T) {
 		t.Errorf("%v != %v", got, want)
 	}
 }
+
+func TestCustomAddCollector(t *testing.T) {
+	input := []int{1, 2, 3}
+	want := 1 + 2 + 3
+
+	got := From(input).Collect(Collector(func() interface{} {
+		return 0
+	}, func(acc interface{}, item interface{}) interface{} {
+		return acc.(int) + item.(int)
+	}))
+	assert.Equal(t, want, got)
+}
+
+func TestGroupSum(t *testing.T) {
+	type AType struct {
+		Name  string
+		Count int
+	}
+
+	input := []AType{
+		{"foo", 10},
+		{"bar", 15},
+		{"foo", 20},
+		{"bar", 30},
+	}
+	want := map[string]int{"foo": 30, "bar": 45}
+	got := From(input).Collect(GroupBy(map[string]int{},
+		func(it interface{}) interface{} {
+			return it.(AType).Name
+		},
+		Collector(func() interface{} {
+			return 0
+		}, func(acc interface{}, item interface{}) interface{} {
+			return acc.(int) + item.(AType).Count
+		}))).(map[string]int)
+	assert.Equal(t, want, got)
+}
+
+func TestCustomAddCollectorV2(t *testing.T) {
+	input := []int{1, 2, 3}
+	want := 1 + 2 + 3
+
+	got := From(input).CollectV2(CollectorV2(func() interface{} {
+		return 0
+	}, func(acc interface{}, item interface{}) interface{} {
+		return acc.(int) + item.(int)
+	}))
+	assert.Equal(t, want, got)
+}
+
+func TestGroupSumV2(t *testing.T) {
+	type AType struct {
+		Name  string
+		Count int
+	}
+
+	input := []AType{
+		{"foo", 10},
+		{"bar", 15},
+		{"foo", 20},
+		{"bar", 30},
+	}
+	want := map[string]int{"foo": 30, "bar": 45}
+	got := From(input).CollectV2(GroupByV2(map[string]int{},
+		func(it interface{}) interface{} {
+			return it.(AType).Name
+		},
+		CollectorV2(func() interface{} {
+			return 0
+		}, func(acc interface{}, item interface{}) interface{} {
+			return acc.(int) + item.(AType).Count
+		}))).(map[string]int)
+	assert.Equal(t, want, got)
+}

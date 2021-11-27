@@ -8,10 +8,22 @@ import (
 
 type collector struct {
 	supplier    func() interface{}
-	accumulator func(a interface{}, it interface{}) interface{}
+	accumulator func(acc interface{}, item interface{}) interface{}
 }
 
 var identity = func(it interface{}) interface{} { return it }
+
+// Collector custom collector
+func Collector(supplier func() interface{}, accumulator accumulatorFn) collector {
+	return collector{
+		supplier: func() interface{} {
+			return reflect.ValueOf(supplier())
+		},
+		accumulator: func(acc interface{}, item interface{}) interface{} {
+			return reflect.ValueOf(accumulator(acc.(reflect.Value).Interface(), item))
+		},
+	}
+}
 
 // Count 收集器，统计数量
 func Count() collector {
