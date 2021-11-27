@@ -26,7 +26,7 @@ func TestZip2(t *testing.T) {
 	input2 := []string{"a", "b", "c"}
 	want := []Tuple2{{1, "a"}, {2, "b"}, {3, "c"}}
 
-	got := Zip2By(From(input1), From(input2), tuple2ZipFn).CollectV2(ToSliceV2([]Tuple2(nil)))
+	got := Zip2By(From(input1), From(input2), tuple2ZipFn).Collect(ToSlice([]Tuple2(nil)))
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("%v != %v", got, want)
 	}
@@ -38,7 +38,7 @@ func TestZip3(t *testing.T) {
 	input3 := []string{"foo", "bar"}
 	want := []Tuple3{{1, "a", "foo"}, {2, "b", "bar"}}
 
-	got := Zip3By(From(input1), From(input2), From(input3), tuple3ZipFn).CollectV2(ToSliceV2([]Tuple3(nil)))
+	got := Zip3By(From(input1), From(input2), From(input3), tuple3ZipFn).Collect(ToSlice([]Tuple3(nil)))
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("%v != %v", got, want)
 	}

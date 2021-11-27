@@ -44,12 +44,6 @@ func BenchmarkCollectToSlice(b *testing.B) {
 	}
 }
 
-func BenchmarkCollectToSliceV2(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		Range(0, size).CollectV2(ToSliceV2([]int{}))
-	}
-}
-
 func BenchmarkLinqToSlice(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		c := make([]int, 0)
@@ -75,13 +69,6 @@ func BenchmarkCollectToMap(b *testing.B) {
 	}
 }
 
-func BenchmarkCollectToMapV2(b *testing.B) {
-	identity := func(it interface{}) interface{} { return it }
-	for i := 0; i < b.N; i++ {
-		Range(0, size).CollectV2(ToMapV2(map[int]int(nil), intGroupBy(groups), identity))
-	}
-}
-
 func BenchmarkLinqToMap(b *testing.B) {
 	identity := func(it interface{}) interface{} { return it }
 	for i := 0; i < b.N; i++ {
@@ -104,12 +91,6 @@ func BenchmarkToSetRaw(b *testing.B) {
 func BenchmarkCollectToSet(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		Range(0, size).Collect(ToSet(map[int]bool(nil)))
-	}
-}
-
-func BenchmarkCollectToSetV2(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		Range(0, size).CollectV2(ToSetV2(map[int]bool(nil)))
 	}
 }
 
@@ -145,12 +126,6 @@ func BenchmarkGroupBy(b *testing.B) {
 	}
 }
 
-func BenchmarkGroupByV2(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		Range(0, size).CollectV2(GroupByV2(map[int][]int(nil), intGroupBy(groups), ToSliceV2([]int(nil))))
-	}
-}
-
 func BenchmarkLinqGroupBy(b *testing.B) {
 	identity := func(it interface{}) interface{} { return it }
 	for i := 0; i < b.N; i++ {
@@ -182,21 +157,9 @@ func BenchmarkCount(b *testing.B) {
 	}
 }
 
-func BenchmarkCountV2(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		Range(0, size).CollectV2(CountV2())
-	}
-}
-
 func BenchmarkGroupCount(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		Range(0, size).Collect(GroupBy(map[int]int(nil), intGroupBy(groups), Count()))
-	}
-}
-
-func BenchmarkGroupCountV2(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		Range(0, size).CollectV2(GroupByV2(map[int]int(nil), intGroupBy(groups), CountV2()))
 	}
 }
 
@@ -219,16 +182,6 @@ func BenchmarkCustomSumCollector(b *testing.B) {
 	}
 }
 
-func BenchmarkCustomSumCollectorV2(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		Range(0, size).CollectV2(CollectorV2(func() interface{} {
-			return 0
-		}, func(acc interface{}, item interface{}) interface{} {
-			return acc.(int) + item.(int)
-		}))
-	}
-}
-
 func BenchmarkGroupSumRaw(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		got := map[int]int{}
@@ -244,18 +197,6 @@ func BenchmarkGroupSum(b *testing.B) {
 		Range(0, size).Collect(GroupBy(map[int]int{},
 			intGroupBy(groups),
 			Collector(func() interface{} {
-				return 0
-			}, func(acc interface{}, item interface{}) interface{} {
-				return acc.(int) + item.(int)
-			})))
-	}
-}
-
-func BenchmarkGroupSumV2(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		Range(0, size).CollectV2(GroupByV2(map[int]int{},
-			intGroupBy(groups),
-			CollectorV2(func() interface{} {
 				return 0
 			}, func(acc interface{}, item interface{}) interface{} {
 				return acc.(int) + item.(int)

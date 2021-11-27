@@ -3,6 +3,8 @@
 gostream 是一个数据流式处理库。它可以声明式地对数据进行转换、过滤、排序、分组、收集，而无需关心操作细节。
 
 ## Changelog
+2021-11-27
+- upgrade to v2
 2021-11-18
 - add ToSet() collector
 
@@ -148,36 +150,27 @@ goos: darwin
 goarch: amd64
 pkg: github.com/a3d21/gostream
 cpu: Intel(R) Core(TM) i7-1068NG7 CPU @ 2.30GHz
-BenchmarkToSliceRaw-8                       8953            135354 ns/op
-BenchmarkToSliceStreamForeach-8              727           1646809 ns/op
-BenchmarkCollectToSlice-8                    100          11056603 ns/op
-BenchmarkCollectToSliceV2-8                  343           3488931 ns/op
-BenchmarkLinqToSlice-8                       370           3218450 ns/op
-BenchmarkToMapRaw-8                          165           7093403 ns/op
-BenchmarkCollectToMap-8                      207           5789365 ns/op
-BenchmarkCollectToMapV2-8                    218           5541738 ns/op
-BenchmarkLinqToMap-8                         223           5376933 ns/op
-BenchmarkToSetRaw-8                          196           6045459 ns/op
-BenchmarkCollectToSet-8                      100          11328736 ns/op
-BenchmarkCollectToSetV2-8                    100          11786037 ns/op
-BenchmarkLinqToSet-8                          87          11689963 ns/op
-BenchmarkGroupByRaw-8                        487           2366660 ns/op
-BenchmarkGroupBy-8                            42          28509248 ns/op
-BenchmarkGroupByV2-8                         100          11627525 ns/op
-BenchmarkLinqGroupBy-8                       153           7730886 ns/op
-BenchmarkPartition-8                         196           6017234 ns/op
-BenchmarkCountRaw-8                          865           1374016 ns/op
-BenchmarkCount-8                             198           6071583 ns/op
-BenchmarkCountV2-8                           868           1378172 ns/op
-BenchmarkGroupCount-8                         61          19945508 ns/op
-BenchmarkGroupCountV2-8                      130           9101270 ns/op
-BenchmarkSumRaw-8                          40366             30390 ns/op
-BenchmarkCustomSumCollector-8                189           6361963 ns/op
-BenchmarkCustomSumCollectorV2-8              435           2735501 ns/op
-BenchmarkGroupSumRaw-8                      1059           1128347 ns/op
-BenchmarkGroupSum-8                           58          20542984 ns/op
-BenchmarkGroupSumV2-8                        100          10555309 ns/op
+BenchmarkToSliceRaw-8                       9092            135891 ns/op
+BenchmarkToSliceStreamForeach-8              710           1657320 ns/op
+BenchmarkCollectToSlice-8                    340           3508339 ns/op
+BenchmarkLinqToSlice-8                       372           3218805 ns/op
+BenchmarkToMapRaw-8                          169           7030848 ns/op
+BenchmarkCollectToMap-8                      213           5587085 ns/op
+BenchmarkLinqToMap-8                         220           5354855 ns/op
+BenchmarkToSetRaw-8                          198           5969691 ns/op
+BenchmarkCollectToSet-8                       94          11444836 ns/op
+BenchmarkLinqToSet-8                         100          11520797 ns/op
+BenchmarkGroupByRaw-8                        505           2366440 ns/op
+BenchmarkGroupBy-8                           100          11304114 ns/op
+BenchmarkLinqGroupBy-8                       145           8175583 ns/op
+BenchmarkPartition-8                         196           6044648 ns/op
+BenchmarkCountRaw-8                          873           1362180 ns/op
+BenchmarkCount-8                             866           1372062 ns/op
+BenchmarkGroupCount-8                        133           8906693 ns/op
+BenchmarkSumRaw-8                          40563             30591 ns/op
+BenchmarkCustomSumCollector-8                435           2742432 ns/op
+BenchmarkGroupSumRaw-8                      1058           1125188 ns/op
+BenchmarkGroupSum-8                          100          10451398 ns/op
 PASS
-ok      github.com/a3d21/gostream       44.039s
-
+ok      github.com/a3d21/gostream       32.625s
 ```

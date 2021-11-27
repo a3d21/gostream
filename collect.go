@@ -6,35 +6,21 @@ import (
 	"github.com/ahmetb/go-linq/v3"
 )
 
-type collector struct {
-	supplier    func() interface{}
-	accumulator func(acc interface{}, item interface{}) interface{}
-}
-
 var identity = func(it interface{}) interface{} { return it }
+
+type collector func(stream Stream) interface{}
 
 // Collector custom collector
 func Collector(supplier func() interface{}, accumulator accumulatorFn) collector {
-	return collector{
-		supplier: func() interface{} {
-			return reflect.ValueOf(supplier())
-		},
-		accumulator: func(acc interface{}, item interface{}) interface{} {
-			return reflect.ValueOf(accumulator(acc.(reflect.Value).Interface(), item))
-		},
+	return func(s Stream) interface{} {
+		return s.ReduceWith(supplier(), accumulator)
 	}
 }
 
-// Count 收集器，统计数量
+// Count ...
 func Count() collector {
-	t := reflect.TypeOf(int(0))
-	supplier := func() interface{} { return reflect.Indirect(reflect.New(t)) }
-	accumulator := func(a interface{}, it interface{}) interface{} {
-		return reflect.ValueOf(a.(reflect.Value).Interface().(int) + 1)
-	}
-	return collector{
-		supplier:    supplier,
-		accumulator: accumulator,
+	return func(s Stream) interface{} {
+		return s.Count()
 	}
 }
 
@@ -51,34 +37,27 @@ func ToSliceBy(typ interface{}, mapper normalizedFn) collector {
 		panic("typ should be slice")
 	}
 
-	supplier := func() interface{} { return reflect.Indirect(reflect.New(t)) }
-	accumulator := func(a interface{}, it interface{}) interface{} {
-		return reflect.Append(a.(reflect.Value), reflect.ValueOf(mapper(it)))
-	}
-	return collector{
-		supplier:    supplier,
-		accumulator: accumulator,
+	return func(stream Stream) interface{} {
+		v := reflect.New(t)
+		container := v.Interface()
+		stream.Map(mapper).Linq().ToSlice(container)
+		return v.Elem().Interface()
 	}
 }
 
-// ToMap 收集器
+// ToMap ...
 func ToMap(typ interface{}, keyMapper, valueMapper normalizedFn) collector {
 	t := reflect.TypeOf(typ)
 	if t.Kind() != reflect.Map {
 		panic("typ should be map")
 	}
 
-	supplier := func() interface{} { return reflect.Indirect(reflect.MakeMap(t)) }
-	accumulator := func(a interface{}, it interface{}) interface{} {
-		key := keyMapper(it)
-		val := valueMapper(it)
-		a.(reflect.Value).SetMapIndex(reflect.ValueOf(key), reflect.ValueOf(val))
-		return a
-	}
-
-	return collector{
-		supplier:    supplier,
-		accumulator: accumulator,
+	return func(stream Stream) interface{} {
+		v := reflect.New(reflect.MapOf(t.Key(), t.Elem()))
+		v.Elem().Set(reflect.MakeMap(t))
+		container := v.Interface()
+		stream.Linq().ToMapBy(container, keyMapper, valueMapper)
+		return v.Elem().Interface()
 	}
 }
 
@@ -89,15 +68,13 @@ func ToSet(typ interface{}) collector {
 		panic("typ should be map[T]bool")
 	}
 
-	trueVal := reflect.ValueOf(true)
-	supplier := func() interface{} { return reflect.Indirect(reflect.MakeMap(t)) }
-	accumulator := func(a interface{}, it interface{}) interface{} {
-		a.(reflect.Value).SetMapIndex(reflect.ValueOf(it), trueVal)
-		return a
-	}
-	return collector{
-		supplier:    supplier,
-		accumulator: accumulator,
+	return func(stream Stream) interface{} {
+		v := reflect.New(reflect.MapOf(t.Key(), t.Elem()))
+		v.Elem().Set(reflect.MakeMap(t))
+		container := v.Interface()
+		truly := func(_ interface{}) interface{} { return true }
+		stream.Linq().ToMapBy(container, identity, truly)
+		return v.Elem().Interface()
 	}
 }
 
@@ -110,28 +87,22 @@ func GroupBy(typ interface{}, classifier normalizedFn, downstream collector) col
 	if t.Kind() != reflect.Map {
 		panic("typ should be map")
 	}
-	supplier := func() interface{} { return reflect.Indirect(reflect.MakeMap(t)) }
-	accumulator := func(a interface{}, it interface{}) interface{} {
-		key := classifier(it)
-		keyV := reflect.ValueOf(key)
-		container := a.(reflect.Value).MapIndex(keyV)
-		if !container.IsValid() {
-			container = downstream.supplier().(reflect.Value)
-		}
-		a.(reflect.Value).SetMapIndex(keyV, downstream.accumulator(container, it).(reflect.Value))
-		return a
-	}
-	return collector{
-		supplier:    supplier,
-		accumulator: accumulator,
-	}
-}
 
-func (s Stream) collect(c collector) reflect.Value {
-	return linq.Query(s).AggregateWithSeed(c.supplier(), c.accumulator).(reflect.Value)
+	return func(stream Stream) interface{} {
+		v := reflect.New(reflect.MapOf(t.Key(), t.Elem()))
+		v.Elem().Set(reflect.MakeMap(t))
+		container := v.Interface()
+		stream.Linq().GroupBy(classifier, identity).Select(func(g interface{}) interface{} {
+			return KeyValue{
+				Key:   g.(linq.Group).Key,
+				Value: From(g.(linq.Group).Group).Collect(downstream),
+			}
+		}).ToMap(container)
+		return v.Elem().Interface()
+	}
 }
 
 // Collect ...
 func (s Stream) Collect(c collector) interface{} {
-	return s.collect(c).Interface()
+	return c(s)
 }

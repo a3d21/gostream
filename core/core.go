@@ -12,5 +12,6 @@ var ToMap = gostream.ToMap
 var ToSet = gostream.ToSet
 var GroupBy = gostream.GroupBy
 var Count = gostream.Count
+var Collector = gostream.Collector
 
 type KeyValue = gostream.KeyValue
