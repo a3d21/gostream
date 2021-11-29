@@ -4,7 +4,8 @@ gostream 是一个数据流式处理库。它可以声明式地对数据进行�
 
 ## Changelog
 2021-11-27
-- upgrade to v2
+- upgrade collector to v2 
+
 2021-11-18
 - add ToSet() collector
 
