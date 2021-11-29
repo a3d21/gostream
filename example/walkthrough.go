@@ -116,7 +116,7 @@ func walkthrough() {
 
 	getCode := func(it interface{}) interface{} { return it.(*Cargo).Code }
 	identity := func(it interface{}) interface{} { return it }
-	code2CargoMap := From(cargos).Collect(ToMap(map[int64]*Cargo(nil), getCode, identity)).(map[int64]*Cargo)
+	code2CargoMap := From(cargos).Collect(ToMapBy(map[int64]*Cargo(nil), getCode, identity)).(map[int64]*Cargo)
 	assertEqual(code2CargoMap, wantCargoMap)
 
 	// 5. Group by Location, result type: map[string][]*Cargo
@@ -166,7 +166,7 @@ func walkthrough() {
 	// 6. 分组成Map result type: map[string]map[int64]*Cargo
 	location2code2cargomap := From(cargos).Collect(
 		GroupBy(map[string]map[int64]*Cargo(nil), getLocation,
-			ToMap(map[int64]*Cargo(nil), getCode, identity)))
+			ToMapBy(map[int64]*Cargo(nil), getCode, identity)))
 
 	// 7. 多重分组，by Location, To, result Type: map[string]map[string][]*Cargo
 	getTo := func(it interface{}) interface{} { return it.(*Cargo).To }

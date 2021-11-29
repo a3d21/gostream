@@ -15,7 +15,7 @@ func TestSlice2MapSpec(t *testing.T) {
 				Key:   it,
 				Value: true,
 			}
-		}).ToMap(map[int]bool{}).(map[int]bool)
+		}).Collect(ToMap(map[int]bool{})).(map[int]bool)
 		m2 := gopark.Slice2Map(vs).(map[int]bool)
 
 		return reflect.DeepEqual(m1, m2)

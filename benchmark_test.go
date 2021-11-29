@@ -65,7 +65,7 @@ func BenchmarkToMapRaw(b *testing.B) {
 func BenchmarkCollectToMap(b *testing.B) {
 	identity := func(it interface{}) interface{} { return it }
 	for i := 0; i < b.N; i++ {
-		Range(0, size).Collect(ToMap(map[int]int(nil), intGroupBy(groups), identity))
+		Range(0, size).Collect(ToMapBy(map[int]int(nil), intGroupBy(groups), identity))
 	}
 }
 

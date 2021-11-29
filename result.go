@@ -57,27 +57,6 @@ func (s Stream) OutMap(out interface{}) {
 	linq.Query(s).ToMap(out)
 }
 
-// ToSlice 收集为Slice, typ为类型参数
-func (s Stream) ToSlice(typ interface{}) interface{} {
-	return s.Collect(ToSlice(typ))
-}
-
-// ToSet 收集为map[T]bool
-func (s Stream) ToSet(typ interface{}) interface{} {
-	return s.Collect(ToSet(typ))
-}
-
-// ToSlice 收集为Map, typ为类型参数。要求item类型为KeyValue
-func (s Stream) ToMap(typ interface{}) interface{} {
-	return s.Collect(ToMap(
-		typ,
-		func(v interface{}) interface{} {
-			return v.(KeyValue).Key
-		}, func(v interface{}) interface{} {
-			return v.(KeyValue).Value
-		}))
-}
-
 // ForEach 遍历item
 func (s Stream) ForEach(action func(interface{})) {
 	linq.Query(s).ForEach(action)

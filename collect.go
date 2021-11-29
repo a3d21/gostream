@@ -11,6 +11,8 @@ var identity = func(it interface{}) interface{} { return it }
 type collector func(stream Stream) interface{}
 
 // Collector custom collector
+//   supplier: supply the seed
+//   accumulator: accumulate items
 func Collector(supplier func() interface{}, accumulator accumulatorFn) collector {
 	return func(s Stream) interface{} {
 		return s.ReduceWith(supplier(), accumulator)
@@ -45,8 +47,17 @@ func ToSliceBy(typ interface{}, mapper normalizedFn) collector {
 	}
 }
 
-// ToMap ...
-func ToMap(typ interface{}, keyMapper, valueMapper normalizedFn) collector {
+// ToMap collect to map, item should be KeyValue type
+func ToMap(typ interface{}) collector {
+	return ToMapBy(typ, func(v interface{}) interface{} {
+		return v.(KeyValue).Key
+	}, func(v interface{}) interface{} {
+		return v.(KeyValue).Value
+	})
+}
+
+// ToMapBy ...
+func ToMapBy(typ interface{}, keyMapper, valueMapper normalizedFn) collector {
 	t := reflect.TypeOf(typ)
 	if t.Kind() != reflect.Map {
 		panic("typ should be map")

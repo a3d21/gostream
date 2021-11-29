@@ -44,3 +44,30 @@ func TestRepeat(t *testing.T) {
 
 	assert.Equal(t, want, got)
 }
+
+func TestDrop(t *testing.T) {
+	input := []int{1, 2, 3, 4, 5}
+	want := []int{4, 5}
+	got := From(input).Drop(3).Collect(ToSlice([]int{})).([]int)
+
+	assert.Equal(t, want, got)
+}
+
+func TestLimit(t *testing.T) {
+	input := []int{1, 2, 3, 4, 5}
+	want := []int{1, 2, 3}
+	got := From(input).Limit(3).Collect(ToSlice([]int{})).([]int)
+
+	assert.Equal(t, want, got)
+}
+
+func TestPeek(t *testing.T) {
+	input := []int{1, 2, 3, 4, 5}
+	want := []int{1, 2, 3, 4, 5}
+	var got []int
+
+	From(input).Peek(func(it interface{}) {
+		got = append(got, it.(int))
+	}).Last()
+	assert.Equal(t, want, got)
+}

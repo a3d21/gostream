@@ -22,7 +22,7 @@ func TestPartition(t *testing.T) {
 func TestPartitionSpec(t *testing.T) {
 	assertion := func(vs []int, usize uint) bool {
 		s := int(usize%20 + 1)
-		v1 := From(vs).Partition([]int(nil), s).ToSlice([][]int(nil)).([][]int)
+		v1 := From(vs).Partition([]int(nil), s).Collect(ToSlice(([][]int(nil)))).([][]int)
 		v2 := gopark.PartitionBy(vs, s).([][]int)
 		return reflect.DeepEqual(v1, v2) || (len(v1) == 0 && len(v2) == 0)
 	}

@@ -16,7 +16,7 @@ func TestEmptyCollectToSliceShouldBeNil(t *testing.T) {
 
 func TestEmptyCollectToMapShouldNotBeNil(t *testing.T) {
 	var input []int
-	got := From(input).Collect(ToMap(map[int]int{}, func(v interface{}) interface{} {
+	got := From(input).Collect(ToMapBy(map[int]int{}, func(v interface{}) interface{} {
 		return v
 	}, func(v interface{}) interface{} {
 		return v
@@ -38,19 +38,32 @@ func TestMakeSlice(t *testing.T) {
 }
 
 func TestCollectToSlice(t *testing.T) {
-	intput := []int{1, 2, 3, 4, 5}
-	got := From(intput).Collect(ToSlice([]int{}))
+	input := []int{1, 2, 3, 4, 5}
+	got := From(input).Collect(ToSlice([]int{}))
 
-	if !reflect.DeepEqual(intput, got) {
-		t.Errorf("%v != %v", got, intput)
+	if !reflect.DeepEqual(input, got) {
+		t.Errorf("%v != %v", got, input)
 	}
 }
 
 func TestCollectToMap(t *testing.T) {
-	intput := []int{1, 2, 3, 4, 5}
+	input := []int{1, 2, 3}
+	want := map[int]bool{1: true, 2: true, 3: true}
+	got := From(input).Map(func(it interface{}) interface{} {
+		return KeyValue{
+			Key:   it,
+			Value: true,
+		}
+	}).Collect(ToMap(map[int]bool{})).(map[int]bool)
+
+	assert.Equal(t, want, got)
+}
+
+func TestCollectToMapBy(t *testing.T) {
+	input := []int{1, 2, 3, 4, 5}
 	want := map[int]int{1: 1, 2: 2, 3: 3, 4: 4, 5: 5}
 	identity := func(it interface{}) interface{} { return it }
-	got := From(intput).Collect(ToMap(map[int]int{}, identity, identity))
+	got := From(input).Collect(ToMapBy(map[int]int{}, identity, identity))
 
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("%v != %v", got, want)
@@ -204,7 +217,7 @@ func TestCollectorToMap(t *testing.T) {
 
 	getLocation := func(it interface{}) interface{} { return it.(*Cargo).Location }
 	getName := func(it interface{}) interface{} { return it.(*Cargo).Name }
-	got := From(input).Collect(ToMap(map[string]string{}, getName, getLocation))
+	got := From(input).Collect(ToMapBy(map[string]string{}, getName, getLocation))
 
 	if !reflect.DeepEqual(want, got) {
 		t.Errorf("%v != %v", got, want)

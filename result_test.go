@@ -2,8 +2,9 @@ package gostream
 
 import (
 	"errors"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDefaultAllShouldBeTrue(t *testing.T) {
@@ -49,19 +50,6 @@ func TestStream_Last(t *testing.T) {
 	v, ok := From(input).Last()
 	assert.True(t, ok)
 	assert.Equal(t, input[2], v)
-}
-
-func TestCollectToMapSugar(t *testing.T) {
-	input := []int{1, 2, 3}
-	want := map[int]int{1: 1, 2: 2, 3: 3}
-	got := From(input).Map(func(v interface{}) interface{} {
-		return KeyValue{
-			Key:   v,
-			Value: v,
-		}
-	}).ToMap(map[int]int(nil))
-
-	assert.Equal(t, want, got)
 }
 
 func TestProcessSucc(t *testing.T) {
