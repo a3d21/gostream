@@ -26,17 +26,6 @@ func TestEmptyCollectToMapShouldNotBeNil(t *testing.T) {
 	assert.Empty(t, got)
 }
 
-func TestMakeSlice(t *testing.T) {
-	var a []int
-	tt := reflect.TypeOf(a)
-	t.Log(tt)
-	ss := reflect.MakeSlice(tt, 0, 0)
-	t.Log(ss)
-	t.Log(ss.Interface())
-	t.Log(ss.Type())
-
-}
-
 func TestCollectToSlice(t *testing.T) {
 	input := []int{1, 2, 3, 4, 5}
 	got := From(input).Collect(ToSlice([]int{}))
