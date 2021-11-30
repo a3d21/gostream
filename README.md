@@ -74,13 +74,13 @@ got := From(input).FlatMap(func(it interface{}) Stream {
 Collect将数据收集起来。受限于go的类型系统，需要显示传类型参数——一个目标类型的实例，可以为nil。
 
 ```go
-intput := []int{1, 2, 3, 4, 5}
+input := []int{1, 2, 3, 4, 5}
 identity := func(it interface{}) interface{} { return it }
 
 // []int{1, 2, 3, 4, 5}
-gotSlice := From(intput).Collect(ToSlice([]int{}))
+gotSlice := From(input).Collect(ToSlice([]int{}))
 // map[int]int{1: 1, 2: 2, 3: 3, 4: 4, 5: 5}
-gotMap := From(intput).Collect(ToMap(map[int]int(nil), identity, identity))
+gotMap := From(input).Collect(ToMap(map[int]int(nil), identity, identity))
 ```
 
 ### Collect GroupBy
