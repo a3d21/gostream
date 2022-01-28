@@ -31,7 +31,7 @@ func (s Stream) BufferChan(typ interface{}, size int, timeout time.Duration) Str
 		sv := reflect.MakeSlice(t, size, size)
 		idx := 0
 
-		var brush = func() {
+		var flush = func() {
 			out <- sv.Slice(0, idx).Interface()
 			sv = reflect.MakeSlice(t, size, size)
 			idx = 0
@@ -44,18 +44,18 @@ func (s Stream) BufferChan(typ interface{}, size int, timeout time.Duration) Str
 					sv.Index(idx).Set(reflect.ValueOf(v))
 					idx++
 					if idx == size {
-						brush()
+						flush()
 					}
 				} else {
 					if idx > 0 {
-						brush()
+						flush()
 					}
 					close(out)
 					return
 				}
 			case <-time.After(timeout):
 				if idx > 0 {
-					brush()
+					flush()
 				}
 			}
 		}
