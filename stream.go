@@ -68,16 +68,6 @@ func (s Stream) Filter(predicate func(interface{}) bool) Stream {
 	return Stream(linq.Query(s).Where(predicate))
 }
 
-// SortedBy ...
-func (s Stream) SortedBy(fn normalizedFn) Stream {
-	return Stream(linq.Query(s).OrderBy(fn).Query)
-}
-
-// SortedDescBy ...
-func (s Stream) SortedDescBy(fn normalizedFn) Stream {
-	return Stream(linq.Query(s).OrderByDescending(fn).Query)
-}
-
 // Peek 对经过的每一项item应用fn函数
 func (s Stream) Peek(fn func(interface{})) Stream {
 	return Stream{
