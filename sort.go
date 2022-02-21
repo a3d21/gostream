@@ -1,6 +1,7 @@
 package gostream
 
 import (
+	"math/rand"
 	"sort"
 
 	"github.com/ahmetb/go-linq/v3"
@@ -28,14 +29,46 @@ func (s Stream) Sorted(less lessFn) Stream {
 				items = append(items, item)
 			}
 
-			if len(items) > 0 {
+			itemLen := len(items)
+			index := 0
+
+			if itemLen > 0 {
 				sort.Slice(items, func(i, j int) bool {
 					return less(items[i], items[j])
 				})
 			}
 
+			return func() (item interface{}, ok bool) {
+				ok = index < itemLen
+				if ok {
+					item = items[index]
+					index++
+				}
+
+				return
+			}
+		},
+	}
+}
+
+// Shuffle ...
+func (s Stream) Shuffle() Stream {
+	return Stream{
+		Iterate: func() linq.Iterator {
+			var items []interface{}
+			next := s.Iterate()
+			for item, ok := next(); ok; item, ok = next() {
+				items = append(items, item)
+			}
+
 			itemLen := len(items)
 			index := 0
+
+			if itemLen > 0 {
+				rand.Shuffle(itemLen, func(i, j int) {
+					items[i], items[j] = items[j], items[i]
+				})
+			}
 
 			return func() (item interface{}, ok bool) {
 				ok = index < itemLen

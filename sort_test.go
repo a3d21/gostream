@@ -30,3 +30,12 @@ func TestSortedByLessOnStruct(t *testing.T) {
 	}).Collect(ToSlice([]AStruct{})).([]AStruct)
 	assert.Equal(t, want, got)
 }
+
+func TestShuffle(t *testing.T) {
+	input := []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+	got := From(input).Shuffle().Collect(ToSlice([]int{})).([]int)
+	sorted := From(got).SortedBy(identity).Collect(ToSlice([]int{})).([]int)
+	assert.Equal(t, len(input), len(got))
+	assert.NotEqual(t, input, got)
+	assert.Equal(t, input, sorted)
+}
