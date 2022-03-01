@@ -90,6 +90,11 @@ func (s Stream) Distinct() Stream {
 	return Stream(s.Linq().Distinct())
 }
 
+// DistinctBy 除重
+func (s Stream) DistinctBy(selector normalizedFn) Stream {
+	return Stream(s.Linq().DistinctBy(selector))
+}
+
 // Drop 丢弃前n项
 func (s Stream) Drop(n int) Stream {
 	return Stream(s.Linq().Skip(n))
