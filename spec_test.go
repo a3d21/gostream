@@ -7,6 +7,7 @@ import (
 	"testing/quick"
 
 	"github.com/a3d21/gostream/gopark"
+	"github.com/ahmetb/go-linq/v3"
 )
 
 func TestSlice2MapSpec(t *testing.T) {
@@ -68,4 +69,57 @@ func TestValuesSpec(t *testing.T) {
 	if err := quick.Check(assertion, &quick.Config{MaxCount: 2000}); err != nil {
 		t.Error(err)
 	}
+}
+
+func TestMultiSortSpec(t *testing.T) {
+	type foo struct {
+		I    int
+		I32  int32
+		UI64 uint64
+		F32  float32
+		S    string
+		B    bool
+	}
+
+	assertion := func(vs []foo) bool {
+
+		vs = From(vs).Map(func(t interface{}) interface{} {
+			f := t.(foo)
+			return foo{
+				I:    f.I % 20,
+				I32:  f.I32 % 20,
+				UI64: f.UI64 % 20,
+				F32:  f.F32,
+				S:    f.S,
+				B:    f.B,
+			}
+		}).Collect(ToSlice([]foo{})).([]foo)
+
+		got1 := From(vs).SortedBy(func(t interface{}) interface{} {
+			f := t.(foo)
+			return GTuple{f.I, f.I32, f.UI64, f.F32, f.S, f.B}
+		}).Collect(ToSlice([]foo{})).([]foo)
+
+		var got2 []foo
+		linq.From(vs).OrderByT(func(f foo) interface{} {
+			return f.I
+		}).ThenByT(func(f foo) interface{} {
+			return f.I32
+		}).ThenByT(func(f foo) interface{} {
+			return f.UI64
+		}).ThenByT(func(f foo) interface{} {
+			return f.F32
+		}).ThenByT(func(f foo) interface{} {
+			return f.S
+		}).ThenByT(func(f foo) interface{} {
+			return f.B
+		}).ToSlice(&got2)
+
+		return reflect.DeepEqual(got1, got2)
+	}
+
+	if err := quick.Check(assertion, &quick.Config{MaxCount: 5000}); err != nil {
+		t.Error(err)
+	}
+
 }

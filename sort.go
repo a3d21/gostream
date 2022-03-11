@@ -8,13 +8,25 @@ import (
 )
 
 // SortedBy ...
-func (s Stream) SortedBy(fn normalizedFn) Stream {
-	return Stream(linq.Query(s).OrderBy(fn).Query)
+func (s Stream) SortedBy(selector normalizedFn) Stream {
+	less := func(a, b interface{}) bool {
+		x, y := selector(a), selector(b)
+		c := getComparer(x)
+		res := c(x, y)
+		return res < 0
+	}
+	return s.Sorted(less)
 }
 
 // SortedDescBy ...
-func (s Stream) SortedDescBy(fn normalizedFn) Stream {
-	return Stream(linq.Query(s).OrderByDescending(fn).Query)
+func (s Stream) SortedDescBy(selector normalizedFn) Stream {
+	less := func(a, b interface{}) bool {
+		x, y := selector(a), selector(b)
+		c := getComparer(x)
+		res := c(x, y)
+		return res > 0
+	}
+	return s.Sorted(less)
 }
 
 // Sorted 按Less函数排序

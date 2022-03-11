@@ -16,3 +16,6 @@ var Count = gostream.Count
 var Collector = gostream.Collector
 
 type KeyValue = gostream.KeyValue
+
+// GTuple 通用Tuple, 可用于多数值比较排序
+type GTuple = gostream.GTuple
