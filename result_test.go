@@ -71,3 +71,15 @@ func TestProcessFail(t *testing.T) {
 	})
 	assert.NotNil(t, err)
 }
+
+func TestOutChanT(t *testing.T) {
+	input := []int{1, 2, 3}
+	ch := make(chan int, 3)
+	From(input).OutChanT(ch)
+
+	var got []int
+	for v := range ch {
+		got = append(got, v)
+	}
+	assert.Equal(t, input, got)
+}

@@ -58,8 +58,13 @@ func (s Stream) OutMap(out interface{}) {
 }
 
 // OutChan 将item输出chan
-func (s Stream) OutChan(out chan<- interface{}) {
-	linq.Query(s).ToChannel(out)
+func (s Stream) OutChan(ch chan<- interface{}) {
+	linq.Query(s).ToChannel(ch)
+}
+
+// OutChanT 将item输出chan
+func (s Stream) OutChanT(ch interface{}) {
+	linq.Query(s).ToChannelT(ch)
 }
 
 // ForEach 遍历item
