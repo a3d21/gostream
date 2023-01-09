@@ -1,4 +1,4 @@
-package gg
+package ggopark
 
 import (
 	"github.com/a3d21/gostream/gopark"

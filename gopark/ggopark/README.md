@@ -1,3 +1,3 @@
-gopark/gg
+gopark/ggopark
 ==
 generic gopark.

@@ -1,4 +1,4 @@
-module github.com/a3d21/gostream/gopark/gg
+module github.com/a3d21/gostream/gopark/ggopark
 
 go 1.18
 

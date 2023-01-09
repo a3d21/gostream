@@ -1,4 +1,4 @@
-package gg
+package ggopark
 
 // PartitionBy 对slice按size分区
 func PartitionBy[T any](vs []T, size int) [][]T {

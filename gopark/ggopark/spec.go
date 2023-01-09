@@ -1,4 +1,4 @@
-package gg
+package ggopark
 
 // Keys return map's key slice
 func Keys[K comparable, V any](m map[K]V) []K {
