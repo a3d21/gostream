@@ -8,11 +8,14 @@ var identity = func(it interface{}) interface{} { return it }
 
 type collector func(stream Stream) interface{}
 
-// Collector custom collector
+// C_ is the exported type for `core`, don't use it.
+type C_ = collector
+
+// CollectBy
 //
 //	supplier: supply the seed
 //	accumulator: accumulate items
-func Collector(supplier func() interface{}, accumulator accumulatorFn) collector {
+func CollectBy(supplier func() interface{}, accumulator accumulatorFn) collector {
 	return func(s Stream) interface{} {
 		return s.ReduceWith(supplier(), accumulator)
 	}

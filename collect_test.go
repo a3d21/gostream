@@ -263,7 +263,7 @@ func TestCustomAddCollector(t *testing.T) {
 	input := []int{1, 2, 3}
 	want := 1 + 2 + 3
 
-	got := From(input).Collect(Collector(func() interface{} {
+	got := From(input).Collect(CollectBy(func() interface{} {
 		return 0
 	}, func(acc interface{}, item interface{}) interface{} {
 		return acc.(int) + item.(int)
@@ -288,7 +288,7 @@ func TestGroupSum(t *testing.T) {
 		func(it interface{}) interface{} {
 			return it.(AType).Name
 		},
-		Collector(func() interface{} {
+		CollectBy(func() interface{} {
 			return 0
 		}, func(acc interface{}, item interface{}) interface{} {
 			return acc.(int) + item.(AType).Count

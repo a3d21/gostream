@@ -135,7 +135,7 @@ func BenchmarkSumRaw(b *testing.B) {
 
 func BenchmarkCustomSumCollector(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		Range(0, size).Collect(Collector(func() interface{} {
+		Range(0, size).Collect(CollectBy(func() interface{} {
 			return 0
 		}, func(acc interface{}, item interface{}) interface{} {
 			return acc.(int) + item.(int)
@@ -157,7 +157,7 @@ func BenchmarkGroupSum(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		Range(0, size).Collect(GroupBy(map[int]int{},
 			intGroupBy(groups),
-			Collector(func() interface{} {
+			CollectBy(func() interface{} {
 				return 0
 			}, func(acc interface{}, item interface{}) interface{} {
 				return acc.(int) + item.(int)
