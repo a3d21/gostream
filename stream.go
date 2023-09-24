@@ -1,26 +1,9 @@
 package gostream
 
-import (
-	"github.com/ahmetb/go-linq/v3"
-)
-
-// Stream 流
-type Stream linq.Query
-
-// Linq 转换成go-linq Query
-func (s Stream) Linq() linq.Query {
-	return linq.Query(s)
-}
-
-// From ...
-func From(source interface{}) Stream {
-	return Stream(linq.From(source))
-}
-
 // Range make a int-range stream from `start` to `end`, aka [start, end).
 func Range(start, end int) Stream {
 	return Stream{
-		Iterate: func() linq.Iterator {
+		Iterate: func() Iterator {
 			current := start
 			return func() (item interface{}, ok bool) {
 				if current >= end {
@@ -37,41 +20,98 @@ func Range(start, end int) Stream {
 
 // Repeat ...
 func Repeat(value interface{}, count int) Stream {
-	return Stream(linq.Repeat(value, count))
-}
+	return Stream{
+		Iterate: func() Iterator {
+			index := 0
 
-// Concat ...
-func (s Stream) Concat(s2 Stream) Stream {
-	return Stream(s.Linq().Concat(s2.Linq()))
-}
+			return func() (item interface{}, ok bool) {
+				if index >= count {
+					return nil, false
+				}
 
-// Append ...
-func (s Stream) Append(item interface{}) Stream {
-	return Stream(s.Linq().Append(item))
+				item, ok = value, true
+
+				index++
+				return
+			}
+		},
+	}
 }
 
 // Map ...
 func (s Stream) Map(mapper normalizedFn) Stream {
-	return Stream(linq.Query(s).Select(mapper))
+	return Stream{
+		Iterate: func() Iterator {
+			next := s.Iterate()
+
+			return func() (item interface{}, ok bool) {
+				var it interface{}
+				it, ok = next()
+				if ok {
+					item = mapper(it)
+				}
+
+				return
+			}
+		},
+	}
 }
 
-// FlatMap ...
-func (s Stream) FlatMap(mapper func(interface{}) Stream) Stream {
-	selector := func(it interface{}) linq.Query {
-		return linq.Query(mapper(it))
+// FlatMap projects each element of a collection to a Query, iterates and
+// flattens the resulting collection into one collection.
+func (s Stream) FlatMap(selector func(interface{}) Stream) Stream {
+	return Stream{
+		Iterate: func() Iterator {
+			outernext := s.Iterate()
+			var inner interface{}
+			var innernext Iterator
+
+			return func() (item interface{}, ok bool) {
+				for !ok {
+					if inner == nil {
+						inner, ok = outernext()
+						if !ok {
+							return
+						}
+
+						innernext = selector(inner).Iterate()
+					}
+
+					item, ok = innernext()
+					if !ok {
+						inner = nil
+					}
+				}
+
+				return
+			}
+		},
 	}
-	return Stream(linq.Query(s).SelectMany(selector))
 }
 
 // Filter ...
 func (s Stream) Filter(predicate func(interface{}) bool) Stream {
-	return Stream(linq.Query(s).Where(predicate))
+	return Stream{
+		Iterate: func() Iterator {
+			next := s.Iterate()
+
+			return func() (item interface{}, ok bool) {
+				for item, ok = next(); ok; item, ok = next() {
+					if predicate(item) {
+						return
+					}
+				}
+
+				return
+			}
+		},
+	}
 }
 
-// Peek 对经过的每一项item应用fn函数
+// Peek ...
 func (s Stream) Peek(fn func(interface{})) Stream {
 	return Stream{
-		Iterate: func() linq.Iterator {
+		Iterate: func() Iterator {
 			next := s.Iterate()
 
 			return func() (item interface{}, ok bool) {
@@ -85,22 +125,85 @@ func (s Stream) Peek(fn func(interface{})) Stream {
 	}
 }
 
-// Distinct 除重。item必须为值类型
+// Distinct ...
 func (s Stream) Distinct() Stream {
-	return Stream(s.Linq().Distinct())
+	return Stream{
+		Iterate: func() Iterator {
+			next := s.Iterate()
+			set := make(map[interface{}]bool)
+
+			return func() (item interface{}, ok bool) {
+				for item, ok = next(); ok; item, ok = next() {
+					if _, has := set[item]; !has {
+						set[item] = true
+						return
+					}
+				}
+
+				return
+			}
+		},
+	}
 }
 
 // DistinctBy 除重
 func (s Stream) DistinctBy(selector normalizedFn) Stream {
-	return Stream(s.Linq().DistinctBy(selector))
+	return Stream{
+		Iterate: func() Iterator {
+			next := s.Iterate()
+			set := make(map[interface{}]bool)
+
+			return func() (item interface{}, ok bool) {
+				for item, ok = next(); ok; item, ok = next() {
+					s := selector(item)
+					if _, has := set[s]; !has {
+						set[s] = true
+						return
+					}
+				}
+
+				return
+			}
+		},
+	}
 }
 
 // Drop 丢弃前n项
 func (s Stream) Drop(n int) Stream {
-	return Stream(s.Linq().Skip(n))
+	return Stream{
+		Iterate: func() Iterator {
+			next := s.Iterate()
+			c := n
+
+			return func() (item interface{}, ok bool) {
+				for ; c > 0; c-- {
+					item, ok = next()
+					if !ok {
+						return
+					}
+				}
+
+				return next()
+			}
+		},
+	}
 }
 
 // Limit 限制长多n项
 func (s Stream) Limit(n int) Stream {
-	return Stream(s.Linq().Take(n))
+	return Stream{
+		Iterate: func() Iterator {
+			next := s.Iterate()
+			c := n
+
+			return func() (item interface{}, ok bool) {
+				if c <= 0 {
+					return
+				}
+
+				c--
+				return next()
+			}
+		},
+	}
 }

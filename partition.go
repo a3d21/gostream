@@ -2,8 +2,6 @@ package gostream
 
 import (
 	"reflect"
-
-	"github.com/ahmetb/go-linq/v3"
 )
 
 // Partition 将Stream按size分区
@@ -17,7 +15,7 @@ func (s Stream) Partition(typ interface{}, size int) Stream {
 	}
 
 	return Stream{
-		Iterate: func() linq.Iterator {
+		Iterate: func() Iterator {
 			next := s.Iterate()
 
 			return func() (interface{}, bool) {

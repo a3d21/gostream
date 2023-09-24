@@ -1,13 +1,9 @@
 package gostream
 
-import (
-	"github.com/ahmetb/go-linq/v3"
-)
-
 // Zip2By ...
 func Zip2By(left, right Stream, fn zip2Fn) Stream {
 	return Stream{
-		Iterate: func() linq.Iterator {
+		Iterate: func() Iterator {
 			leftNext := left.Iterate()
 			rightNext := right.Iterate()
 
@@ -27,7 +23,7 @@ func Zip2By(left, right Stream, fn zip2Fn) Stream {
 // Zip3By ...
 func Zip3By(first, second, third Stream, fn zip3Fn) Stream {
 	return Stream{
-		Iterate: func() linq.Iterator {
+		Iterate: func() Iterator {
 			firstNext := first.Iterate()
 			secondNext := second.Iterate()
 			thirdNext := third.Iterate()
