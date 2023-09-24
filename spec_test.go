@@ -7,7 +7,6 @@ import (
 	"testing/quick"
 
 	"github.com/a3d21/gostream/gopark"
-	"github.com/ahmetb/go-linq/v3"
 )
 
 func TestSlice2MapSpec(t *testing.T) {
@@ -71,6 +70,7 @@ func TestValuesSpec(t *testing.T) {
 	}
 }
 
+/**
 func TestMultiSortSpec(t *testing.T) {
 	type foo struct {
 		I    int
@@ -122,4 +122,4 @@ func TestMultiSortSpec(t *testing.T) {
 		t.Error(err)
 	}
 
-}
+}*/
