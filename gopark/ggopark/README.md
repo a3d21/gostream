@@ -1,3 +1,0 @@
-gopark/ggopark
-==
-generic gopark.
