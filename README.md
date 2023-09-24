@@ -3,13 +3,17 @@
 gostream 是一个数据流式处理库。它可以声明式地对数据进行转换、过滤、排序、分组、收集，而无需关心操作细节。
 
 ## Changelog
+
 2023-09-24
+
 - remove go-linq
 
 2021-11-27
-- upgrade collector to v2 
+
+- upgrade collector to v2
 
 2021-11-18
+
 - add ToSet() collector
 
 ## Get GoStream
@@ -54,7 +58,6 @@ func main() {
 }
 ```
 
-
 ### Map & FlatMap
 
 Map和FlatMap的差别在于：FlatMap的mapper返回一个Stream。
@@ -62,10 +65,10 @@ Map和FlatMap的差别在于：FlatMap的mapper返回一个Stream。
 ```go
 input := [][]int{{3, 2, 1}, {6, 5, 4}, {9, 8, 7}}
 want := []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
-got := From(input).FlatMap(func(it interface{}) Stream {
-   return From(it)
-}).SortedBy(func(it interface{}) interface{} {
-   return it
+got := From(input).FlatMap(func (it interface{}) Stream {
+return From(it)
+}).SortedBy(func (it interface{}) interface{} {
+return it
 }).Collect(ToSlice([]int{}))
 ```
 
@@ -75,7 +78,7 @@ Collect将数据收集起来。受限于go的类型系统，需要显示传类�
 
 ```go
 input := []int{1, 2, 3, 4, 5}
-identity := func(it interface{}) interface{} { return it }
+identity := func (it interface{}) interface{} { return it }
 
 // []int{1, 2, 3, 4, 5}
 gotSlice := From(input).Collect(ToSlice([]int{}))
@@ -84,8 +87,10 @@ gotMap := From(input).Collect(ToMap(map[int]int(nil), identity, identity))
 ```
 
 ### Collect GroupBy
+
 GroupBy定义一个分组收集器，参数依序分别为 类型参数、分类方法、下游收集器。
 GroupBy可以和ToSlice、ToMap组合，GroupBy也可以多级嵌套，实现多级分组。
+
 ```go
 GroupBy(typ interface{}, classifier normalFn, downstream collector) collector
 ```
@@ -95,40 +100,40 @@ GroupBy(typ interface{}, classifier normalFn, downstream collector) collector
 ```go
 // Cargo 货物实体
 type Cargo struct {
-   ID       int
-   Name     string
-   Location string
-   Status   int
+ID       int
+Name     string
+Location string
+Status   int
 }
 
 input := []*Cargo{{
-    ID:       1,
-    Name:     "foo",
-    Location: "shenzhen",
-    Status:   1,
-    }, {
-    ID:       2,
-    Name:     "bar",
-    Location: "shenzhen",
-    Status:   0,
-    }, {
-    ID:       3,
-    Name:     "a3d21",
-    Location: "guangzhou",
-    Status:   1,
+ID:       1,
+Name:     "foo",
+Location: "shenzhen",
+Status:   1,
+}, {
+ID:       2,
+Name:     "bar",
+Location: "shenzhen",
+Status:   0,
+}, {
+ID:       3,
+Name:     "a3d21",
+Location: "guangzhou",
+Status:   1,
 }}
 
 ```
 
 ```go
-getStatus := func(it interface{}) interface{} { return it.(*Cargo).Status }
-getLocation := func(it interface{}) interface{} { return it.(*Cargo).Location }
+getStatus := func (it interface{}) interface{} { return it.(*Cargo).Status }
+getLocation := func (it interface{}) interface{} { return it.(*Cargo).Location }
 
 // result type: map[int]map[string][]*Cargo
 got := From(input).Collect(
-   GroupBy(map[int]map[string][]*Cargo(nil), getStatus,
-      GroupBy(map[string][]*Cargo(nil), getLocation,
-         ToSlice([]*Cargo(nil)))))
+GroupBy(map[int]map[string][]*Cargo(nil), getStatus,
+GroupBy(map[string][]*Cargo(nil), getLocation,
+ToSlice([]*Cargo(nil)))))
 ```
 
 ### Flatten Group
@@ -136,42 +141,44 @@ got := From(input).Collect(
 这个示例演示如何将多级分组Map转成Slice。`map[int]map[string][]*Cargo => []*Cargo`
 
 ```go
-From(cargoByLocationByTo).FlatMap(func(it interface{}) Stream {
-   return From(it.(KeyValue).Value).FlatMap(func(it2 interface{}) Stream {
-      return From(it2.(KeyValue).Value)
-   })
+From(cargoByLocationByTo).FlatMap(func (it interface{}) Stream {
+return From(it.(KeyValue).Value).FlatMap(func (it2 interface{}) Stream {
+return From(it2.(KeyValue).Value)
+})
 }).Collect(ToSlice([]*Cargo{}))
 ```
 
-
 ## Benchmark
+
 ```
 $ go test -bench .
 goos: darwin
 goarch: amd64
 pkg: github.com/a3d21/gostream
-cpu: Intel(R) Core(TM) i7-1068NG7 CPU @ 2.30GHz
-BenchmarkToSliceRaw-8                       9092            135891 ns/op
-BenchmarkToSliceStreamForeach-8              710           1657320 ns/op
-BenchmarkCollectToSlice-8                    340           3508339 ns/op
-BenchmarkLinqToSlice-8                       372           3218805 ns/op
-BenchmarkToMapRaw-8                          169           7030848 ns/op
-BenchmarkCollectToMap-8                      213           5587085 ns/op
-BenchmarkLinqToMap-8                         220           5354855 ns/op
-BenchmarkToSetRaw-8                          198           5969691 ns/op
-BenchmarkCollectToSet-8                       94          11444836 ns/op
-BenchmarkLinqToSet-8                         100          11520797 ns/op
-BenchmarkGroupByRaw-8                        505           2366440 ns/op
-BenchmarkGroupBy-8                           100          11304114 ns/op
-BenchmarkLinqGroupBy-8                       145           8175583 ns/op
-BenchmarkPartition-8                         196           6044648 ns/op
-BenchmarkCountRaw-8                          873           1362180 ns/op
-BenchmarkCount-8                             866           1372062 ns/op
-BenchmarkGroupCount-8                        133           8906693 ns/op
-BenchmarkSumRaw-8                          40563             30591 ns/op
-BenchmarkCustomSumCollector-8                435           2742432 ns/op
-BenchmarkGroupSumRaw-8                      1058           1125188 ns/op
-BenchmarkGroupSum-8                          100          10451398 ns/op
+cpu: Intel(R) Core(TM) i7-7820HQ CPU @ 2.90GHz
+BenchmarkToSliceRaw-8                       7677            140295 ns/op
+BenchmarkToSliceStreamForeach-8              607           1895616 ns/op
+BenchmarkCollectToSlice-8                    296           4038376 ns/op
+BenchmarkToMapRaw-8                          164           7141694 ns/op
+BenchmarkCollectToMap-8                      156           7556103 ns/op
+BenchmarkToSetRaw-8                          177           6553303 ns/op
+BenchmarkCollectToSet-8                       92          12908673 ns/op
+BenchmarkGroupByRaw-8                        397           2951509 ns/op
+BenchmarkGroupBy-8                            91          12943394 ns/op
+BenchmarkPartition-8                         146           8094362 ns/op
+BenchmarkCountRaw-8                          746           1527550 ns/op
+BenchmarkCount-8                             720           1533764 ns/op
+BenchmarkGroupCount-8                        100          10047602 ns/op
+BenchmarkSumRaw-8                          21657             56056 ns/op
+BenchmarkCustomSumCollector-8                385           3075337 ns/op
+BenchmarkGroupSumRaw-8                      1020           1104203 ns/op
+BenchmarkGroupSum-8                          100          12056522 ns/op
 PASS
-ok      github.com/a3d21/gostream       32.625s
+ok      github.com/a3d21/gostream       26.355s
+
 ```
+
+**结论：**
+1. 与原生操作相比，`ToSlice`、`GroupBy`、`Sum`性能相差较大
+2. 因为一般业务系统数据规模小（< 1000），耗时主要在IO，所以使用gostream可感知的影响不大
+
