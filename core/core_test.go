@@ -11,6 +11,15 @@ func TestCollectToSlice(t *testing.T) {
 	assert.Equal(t, input, got)
 }
 
+func TestCollectToSliceBy(t *testing.T) {
+	input := []int{1, 2, 3, 4, 5}
+	got := From(input).Collect(ToSliceBy([]int{}, func(it int) int {
+		return it * 2
+	}))
+	want := []int{2, 4, 6, 8, 10}
+	assert.Equal(t, want, got)
+}
+
 func TestCollectToMap(t *testing.T) {
 	input := []int{1, 2, 3, 4, 5}
 	got := From(input).Filter(func(it interface{}) bool {
@@ -19,6 +28,19 @@ func TestCollectToMap(t *testing.T) {
 		return KeyValue{it, it}
 	}).Collect(ToMap(map[int]int{}))
 	want := map[int]int{1: 1, 2: 2, 3: 3}
+	assert.Equal(t, want, got)
+}
+
+func TestCollectToMapBy(t *testing.T) {
+	input := []int{1, 2, 3, 4, 5}
+	got := From(input).Filter(func(it interface{}) bool {
+		return it.(int) < 4
+	}).Collect(ToMapBy(map[int]int{}, func(it any) int {
+		return it.(int) + 1
+	}, func(it any) int {
+		return it.(int) * 2
+	}))
+	want := map[int]int{2: 2, 3: 4, 4: 6}
 	assert.Equal(t, want, got)
 }
 
@@ -31,10 +53,10 @@ func TestCollectToSet(t *testing.T) {
 
 func TestCollectGroupBy(t *testing.T) {
 	input := []int{11, 21, 31, 41, 12, 22, 32, 42, 13, 23, 33, 43, 14, 24, 34, 44}
-	got := From(input).Collect(GroupBy(map[int]map[int][]int{}, func(it any) any {
-		return it.(int) / 10
-	}, GroupBy(map[int][]int{}, func(it any) any {
-		return it.(int) % 10
+	got := From(input).Collect(GroupBy(map[int]map[int][]int{}, func(it int) int {
+		return it / 10
+	}, GroupBy(map[int][]int{}, func(it int) int {
+		return it % 10
 	}, ToSlice([]int{}))))
 
 	want := map[int]map[int][]int{
