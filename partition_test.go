@@ -1,11 +1,10 @@
 package gostream
 
 import (
+	"github.com/a3d21/gostream/gopark"
 	"reflect"
 	"testing"
 	"testing/quick"
-
-	"github.com/a3d21/gostream/gopark_deprecated"
 )
 
 func TestPartition(t *testing.T) {
@@ -23,7 +22,7 @@ func TestPartitionSpec(t *testing.T) {
 	assertion := func(vs []int, usize uint) bool {
 		s := int(usize%20 + 1)
 		v1 := From(vs).Partition([]int(nil), s).Collect(ToSlice(([][]int(nil)))).([][]int)
-		v2 := gopark_deprecated.PartitionBy(vs, s).([][]int)
+		v2 := gopark.PartitionBy(vs, s)
 		return reflect.DeepEqual(v1, v2) || (len(v1) == 0 && len(v2) == 0)
 	}
 
