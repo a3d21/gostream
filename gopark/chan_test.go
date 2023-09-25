@@ -1,4 +1,4 @@
-package ggopark
+package gopark
 
 import (
 	. "github.com/a3d21/gostream/core"

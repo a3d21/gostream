@@ -1,33 +1,23 @@
 package gopark
 
-import (
-	"reflect"
-)
-
 // PartitionBy 对slice按size分区
-func PartitionBy(vs interface{}, size int) interface{} {
+func PartitionBy[T any](vs []T, size int) [][]T {
 	if size < 1 {
 		panic("illegal size")
 	}
-	t := reflect.TypeOf(vs)
-	if t.Kind() != reflect.Slice {
-		panic("typ should be slice")
-	}
 
-	v := reflect.ValueOf(vs)
-	vlen := v.Len()
-	length := (vlen + size - 1) / size
+	vlen := len(vs)
+	resultLen := (vlen + size - 1) / size
 
-	resultValue := reflect.MakeSlice(reflect.SliceOf(t), length, length)
-
-	for i := 0; i < length; i++ {
+	var result [][]T
+	for i := 0; i < resultLen; i++ {
 		begin := i * size
 		end := begin + size
 		if end > vlen {
 			end = vlen
 		}
-		resultValue.Index(i).Set(v.Slice(begin, end))
+		result = append(result, vs[begin:end])
 	}
 
-	return resultValue.Interface()
+	return result
 }

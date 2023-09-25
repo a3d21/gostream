@@ -6,7 +6,7 @@ import (
 	"testing"
 	"testing/quick"
 
-	"github.com/a3d21/gostream/gopark"
+	"github.com/a3d21/gostream/gopark_deprecated"
 )
 
 func TestSlice2MapSpec(t *testing.T) {
@@ -17,7 +17,7 @@ func TestSlice2MapSpec(t *testing.T) {
 				Value: true,
 			}
 		}).Collect(ToMap(map[int]bool{})).(map[int]bool)
-		m2 := gopark.Slice2Map(vs).(map[int]bool)
+		m2 := gopark_deprecated.Slice2Map(vs).(map[int]bool)
 
 		return reflect.DeepEqual(m1, m2)
 	}
@@ -29,7 +29,7 @@ func TestSlice2MapSpec(t *testing.T) {
 func TestToSetSpec(t *testing.T) {
 	assertion := func(vs []int) bool {
 		m1 := From(vs).Collect(ToSet(map[int]bool{})).(map[int]bool)
-		m2 := gopark.Slice2Map(vs).(map[int]bool)
+		m2 := gopark_deprecated.Slice2Map(vs).(map[int]bool)
 
 		return reflect.DeepEqual(m1, m2)
 	}
@@ -44,7 +44,7 @@ func TestKeysSpec(t *testing.T) {
 			return kv.(KeyValue).Key
 		}).SortedBy(identity).Collect(ToSlice([]string{})).([]string)
 
-		s2 := gopark.Keys(m).([]string)
+		s2 := gopark_deprecated.Keys(m).([]string)
 		sort.Strings(s2)
 		return reflect.DeepEqual(s1, s2) || (len(s1) == 0 && len(s2) == 0)
 	}
@@ -60,7 +60,7 @@ func TestValuesSpec(t *testing.T) {
 			return kv.(KeyValue).Value
 		}).SortedBy(identity).Collect(ToSlice([]int{})).([]int)
 
-		s2 := gopark.Values(m).([]int)
+		s2 := gopark_deprecated.Values(m).([]int)
 		sort.Ints(s2)
 		return reflect.DeepEqual(s1, s2) || (len(s1) == 0 && len(s2) == 0)
 	}

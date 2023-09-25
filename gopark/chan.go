@@ -1,4 +1,4 @@
-package ggopark
+package gopark
 
 import (
 	"time"

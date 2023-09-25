@@ -1,39 +1,19 @@
 package gopark
 
-import (
-	"reflect"
-)
-
 // Keys return map's key slice
-func Keys(m interface{}) interface{} {
-	mval := reflect.ValueOf(m)
-	if mval.Kind() != reflect.Map {
-		panic("typ should be map")
+func Keys[K comparable, V any](m map[K]V) []K {
+	var ks []K
+	for k, _ := range m {
+		ks = append(ks, k)
 	}
-
-	styp := reflect.SliceOf(mval.Type().Key())
-	slen := mval.Len()
-	sval := reflect.MakeSlice(styp, slen, slen)
-	for i, k := range mval.MapKeys() {
-		sval.Index(i).Set(k)
-	}
-
-	return sval.Interface()
+	return ks
 }
 
 // Values return map's value slice
-func Values(m interface{}) interface{} {
-	mval := reflect.ValueOf(m)
-	if mval.Kind() != reflect.Map {
-		panic("typ should be map")
+func Values[K comparable, V any](m map[K]V) []V {
+	var vs []V
+	for _, v := range m {
+		vs = append(vs, v)
 	}
-
-	styp := reflect.SliceOf(mval.Type().Elem())
-	slen := mval.Len()
-	sval := reflect.MakeSlice(styp, slen, slen)
-	for i, k := range mval.MapKeys() {
-		v := mval.MapIndex(k)
-		sval.Index(i).Set(v)
-	}
-	return sval.Interface()
+	return vs
 }

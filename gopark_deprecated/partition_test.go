@@ -1,4 +1,4 @@
-package gopark
+package gopark_deprecated
 
 import (
 	"reflect"

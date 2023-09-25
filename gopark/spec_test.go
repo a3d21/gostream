@@ -1,7 +1,7 @@
-package ggopark
+package gopark
 
 import (
-	"github.com/a3d21/gostream/gopark"
+	"github.com/a3d21/gostream/gopark_deprecated"
 	"reflect"
 	"sort"
 	"testing"
@@ -12,7 +12,7 @@ func TestPartitionSpec(t *testing.T) {
 	assertion := func(vs []int, usize uint) bool {
 		size := int(usize%20 + 1)
 		got := PartitionBy(vs, size)
-		want := gopark.PartitionBy(vs, size).([][]int)
+		want := gopark_deprecated.PartitionBy(vs, size).([][]int)
 		return reflect.DeepEqual(want, got) || (len(got) == 0 && len(want) == 0)
 	}
 	if err := quick.Check(assertion, &quick.Config{MaxCount: 2000}); err != nil {
@@ -23,7 +23,7 @@ func TestPartitionSpec(t *testing.T) {
 func TestKeysSpec(t *testing.T) {
 	assertion := func(m map[int]int) bool {
 		got := Keys(m)
-		want := gopark.Keys(m).([]int)
+		want := gopark_deprecated.Keys(m).([]int)
 		sort.Ints(got)
 		sort.Ints(want)
 		return reflect.DeepEqual(want, got) || (len(got) == 0 && len(want) == 0)
@@ -36,7 +36,7 @@ func TestKeysSpec(t *testing.T) {
 func TestValuesSpec(t *testing.T) {
 	assertion := func(m map[int]int) bool {
 		got := Values(m)
-		want := gopark.Values(m).([]int)
+		want := gopark_deprecated.Values(m).([]int)
 		sort.Ints(got)
 		sort.Ints(want)
 		return reflect.DeepEqual(want, got) || (len(got) == 0 && len(want) == 0)
@@ -49,7 +49,7 @@ func TestValuesSpec(t *testing.T) {
 func TestSlice2MapSpec(t *testing.T) {
 	assertion := func(vs []int) bool {
 		got := Slice2Map(vs)
-		want := gopark.Slice2Map(vs).(map[int]bool)
+		want := gopark_deprecated.Slice2Map(vs).(map[int]bool)
 		return reflect.DeepEqual(want, got) || (len(got) == 0 && len(want) == 0)
 	}
 	if err := quick.Check(assertion, &quick.Config{MaxCount: 2000}); err != nil {
