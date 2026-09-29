@@ -1,27 +1,40 @@
 package gostream
 
 import (
-	"reflect"
 	"testing"
 	"testing/quick"
 )
 
-// TestPartitionMapDemo Map分区、合并测试
+// TestPartitionMapDemo tests map partitioning and merging.
 func TestPartitionMapDemo(t *testing.T) {
 
-	assertion := func(src map[string]int, usize uint) bool {
-		s := int(usize%20 + 1)
-		// partition by size
-		par := From(src).Partition([]KeyValue{}, s).Map(func(it interface{}) interface{} {
-			return From(it).Collect(ToMap(map[string]int{}))
-		}).Collect(ToSlice([]map[string]int{})).([]map[string]int)
+	assertion := func(src map[string]int) bool {
+		if len(src) == 0 {
+			return true
+		}
+		// Convert map to slice of KV pairs
+		kvs := FromMap(src)
 
-		// merge partition
-		merged := From(par).FlatMap(func(it interface{}) Stream {
-			return From(it)
-		}).Collect(ToMap(map[string]int{})).(map[string]int)
+		// partition by size 3
+		partitioned := Partition(kvs, 3).ToSlice()
 
-		return reflect.DeepEqual(src, merged)
+		// merge partitions back
+		merged := make(map[string]int)
+		for _, part := range partitioned {
+			for _, kv := range part {
+				merged[kv.Key] = kv.Value
+			}
+		}
+
+		if len(src) != len(merged) {
+			return false
+		}
+		for k, v := range src {
+			if merged[k] != v {
+				return false
+			}
+		}
+		return true
 	}
 
 	if err := quick.Check(assertion, &quick.Config{

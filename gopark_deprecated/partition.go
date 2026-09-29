@@ -4,7 +4,7 @@ import (
 	"reflect"
 )
 
-// PartitionBy 对slice按size分区
+// PartitionBy divides a slice into sub-slices of the specified size.
 func PartitionBy(vs interface{}, size int) interface{} {
 	if size < 1 {
 		panic("illegal size")

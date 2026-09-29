@@ -1,6 +1,6 @@
-module github.com/a3d21/gostream
+module github.com/a3d21/gostream/v2
 
-go 1.18
+go 1.27
 
 require github.com/stretchr/testify v1.7.0
 

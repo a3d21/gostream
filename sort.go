@@ -5,9 +5,9 @@ import (
 	"sort"
 )
 
-// SortedBy ...
-func (s Stream) SortedBy(selector normalizedFn) Stream {
-	less := func(a, b interface{}) bool {
+// SortedBy sorts the stream by comparing values selected by `selector`.
+func (s Stream[T]) SortedBy[U comparable](selector func(T) U) Stream[T] {
+	less := func(a, b T) bool {
 		x, y := selector(a), selector(b)
 		c := getComparer(x)
 		res := c(x, y)
@@ -16,9 +16,9 @@ func (s Stream) SortedBy(selector normalizedFn) Stream {
 	return s.Sorted(less)
 }
 
-// SortedDescBy ...
-func (s Stream) SortedDescBy(selector normalizedFn) Stream {
-	less := func(a, b interface{}) bool {
+// SortedDescBy sorts the stream in descending order by comparing values selected by `selector`.
+func (s Stream[T]) SortedDescBy[U comparable](selector func(T) U) Stream[T] {
+	less := func(a, b T) bool {
 		x, y := selector(a), selector(b)
 		c := getComparer(x)
 		res := c(x, y)
@@ -27,14 +27,14 @@ func (s Stream) SortedDescBy(selector normalizedFn) Stream {
 	return s.Sorted(less)
 }
 
-// Sorted 按Less函数排序
-// 参数说明
+// Sorted sorts elements using the provided less function.
+// Parameters:
 //
-//	less函数。 a, b 为item，若a小于b(a排b前面)返回true
-func (s Stream) Sorted(less lessFn) Stream {
-	return Stream{
-		Iterate: func() Iterator {
-			var items []interface{}
+//	less  comparison function. Returns true if a should be placed before b.
+func (s Stream[T]) Sorted(less func(a, b T) bool) Stream[T] {
+	return Stream[T]{
+		Iterate: func() Iterator[T] {
+			var items []T
 			next := s.Iterate()
 			for item, ok := next(); ok; item, ok = next() {
 				items = append(items, item)
@@ -49,24 +49,23 @@ func (s Stream) Sorted(less lessFn) Stream {
 				})
 			}
 
-			return func() (item interface{}, ok bool) {
+			return func() (item T, ok bool) {
 				ok = index < itemLen
 				if ok {
 					item = items[index]
 					index++
 				}
-
 				return
 			}
 		},
 	}
 }
 
-// Shuffle ...
-func (s Stream) Shuffle() Stream {
-	return Stream{
-		Iterate: func() Iterator {
-			var items []interface{}
+// Shuffle randomly shuffles the elements in the stream.
+func (s Stream[T]) Shuffle() Stream[T] {
+	return Stream[T]{
+		Iterate: func() Iterator[T] {
+			var items []T
 			next := s.Iterate()
 			for item, ok := next(); ok; item, ok = next() {
 				items = append(items, item)
@@ -81,13 +80,12 @@ func (s Stream) Shuffle() Stream {
 				})
 			}
 
-			return func() (item interface{}, ok bool) {
+			return func() (item T, ok bool) {
 				ok = index < itemLen
 				if ok {
 					item = items[index]
 					index++
 				}
-
 				return
 			}
 		},

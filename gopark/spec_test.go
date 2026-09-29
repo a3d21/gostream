@@ -1,7 +1,7 @@
 package gopark
 
 import (
-	"github.com/a3d21/gostream/gopark_deprecated"
+	"github.com/a3d21/gostream/v2/gopark_deprecated"
 	"reflect"
 	"sort"
 	"testing"

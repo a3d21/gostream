@@ -1,48 +1,40 @@
 # GoStream
 
-English | [简体中文](./README_cn.md)
+[English](./README.md) | 简体中文
 
-`gostream` is a type-safe stream processing library for Go using generics. It allows you to transform, filter, sort, group, and collect collections and channels declaratively without worrying about imperative loop boilerplate.
-
-## Features
-
-- **Generic & Type-Safe**: Fully rewritten for Go generics, zero type assertions (`interface{}` free).
-- **Declarative Operations**: `Map`, `FlatMap`, `Filter`, `Distinct`, `SortedBy`, `Reduce`, `GroupBy`, and more.
-- **Multiple Data Sources**: Support for slices (`From`), maps (`FromMap`), channels (`FromChannel`), strings/runes (`FromString`), and generators (`Range`, `Repeat`).
-- **Flexible Collectors**: Built-in collectors like `ToSliceCollector`, `ToMapCollector`, `ToMapByCollector`, `ToSetCollector`, `CountCollector`, and composable `GroupByCollector`.
-- **Lazy Evaluation**: Streaming pipeline with iterator-based execution.
+gostream 是一个数据流式处理库。它可以声明式地对数据进行转换、过滤、排序、分组、收集，而无需关心操作细节。
 
 ## Changelog
 
-### 2026-09-29
+2026-09-29
 
-- Added Go generics support, fully refactored API to type-safe streams.
-- Upgraded module path to `github.com/a3d21/gostream/v2`.
-- Streamlined `Collector` design, removing dummy type parameters.
+- 支持 Go 泛型，重构为强类型安全流式处理 API
+- 升级模块路径为 `github.com/a3d21/gostream/v2`
+- 简化 Collector 设计，移除 dummy 实例传参
 
-### 2023-09-24
+2023-09-24
 
-- Removed `go-linq`.
+- remove go-linq
 
-### 2021-11-27
+2021-11-27
 
-- Upgraded collector to v2.
+- upgrade collector to v2
 
-### 2021-11-18
+2021-11-18
 
-- Added `ToSet()` collector.
+- add ToSet() collector
 
-## Installation
+## Get GoStream
 
-```bash
+```
 go get github.com/a3d21/gostream/v2
 ```
 
-## Quick Start
+## Example
 
-See [example/walkthrough.go](./example/walkthrough.go) for more detailed examples.
+See [walkthrough.go](./example/walkthrough.go)
 
-### Basic Example
+### Base Example
 
 ```go
 package main
@@ -69,13 +61,14 @@ func main() {
 	if !reflect.DeepEqual(got, want) {
 		panic(fmt.Sprintf("%v != %v", got, want))
 	}
+
+	// walkthrough()
 }
 ```
 
 ### Map & FlatMap
 
-- `Map` performs a 1-to-1 transformation for each element (`Stream[T] -> Stream[U]`).
-- `FlatMap` maps each element to a `Stream` and flattens the resulting streams into one stream (`Stream[T] -> Stream[U]`).
+`Map` 将流中的元素进行一对一转换；`FlatMap` 的 mapper 则返回一个 `Stream`，并将嵌套流扁平化展开。
 
 ```go
 input := [][]int{{3, 2, 1}, {6, 5, 4}, {9, 8, 7}}
@@ -88,9 +81,9 @@ got := From(input).FlatMap(func(it []int) Stream[int] {
 }).ToSlice()
 ```
 
-### Working with Maps (`FromMap`)
+### FromMap (键值对流)
 
-Create a stream of `KeyValue[K, V]` from a `map`:
+支持直接从 `map` 创建流，元素类型为 `KeyValue[K, V]`：
 
 ```go
 input := map[string]int{"a": 1, "b": 2, "c": 3, "d": 4}
@@ -102,42 +95,43 @@ FromMap(input).
 	})
 ```
 
-### Collectors (`ToSlice`, `ToMap`, `ToSet`)
+### Collect ToSlice, ToMap & ToSet
 
-With Go generics, all collectors are fully type-safe at compile-time:
+在泛型支持下，收集操作具备完整的编译期类型安全，无需再传入 dummy 实例或执行类型断言：
 
-- **ToSlice**: Directly call `.ToSlice()` on the stream, or use `.Collect(ToSliceCollector[T]())`.
-- **ToMap**: Use `ToMapByCollector(keyMapper, valueMapper)` to customize key/value extraction; or use `ToMapCollector[K, V]()` directly if the stream element is already `KeyValue[K, V]`.
-- **ToSet**: Collect unique items into `map[T]bool` with `ToSetCollector[T]()`.
+- **ToSlice**：可直接调用 `.ToSlice()`，亦可通过 `.Collect(ToSliceCollector[T]())` 收集。
+- **ToMap**：通过 `ToMapByCollector(keyMapper, valueMapper)` 自定义键值提取规则；若流中元素本身为 `KeyValue[K, V]`，可直接使用 `ToMapCollector[K, V]()`。
+- **ToSet**：通过 `ToSetCollector[T]()` 收集为 `map[T]bool`。
 
 ```go
 input := []int{1, 2, 3, 4, 5}
 
-// Collect to slice: []int{1, 2, 3, 4, 5}
+// 收集为切片: []int{1, 2, 3, 4, 5}
 gotSlice := From(input).ToSlice()
 
-// Collect to map: map[int]int{1: 10, 2: 20, 3: 30, 4: 40, 5: 50}
+// 收集为映射: map[int]int{1: 10, 2: 20, 3: 30, 4: 40, 5: 50}
 gotMap := From(input).Collect(ToMapByCollector(
 	func(it int) int { return it },
 	func(it int) int { return it * 10 },
 ))
 
-// Collect to set: map[int]bool{1: true, 2: true, 3: true, 4: true, 5: true}
+// 收集为集合: map[int]bool{1: true, 2: true, 3: true, 4: true, 5: true}
 gotSet := From(input).Collect(ToSetCollector[int]())
 ```
 
-### GroupBy Collector
+### Collect GroupBy
 
-`GroupByCollector` takes a classifier function and a downstream collector. With generic type inference, type arguments are inferred automatically in most scenarios. It can be composed with `ToSliceCollector`, `ToMapByCollector`, `CountCollector`, or nested multi-level `GroupByCollector`.
+`GroupByCollector` 定义分组收集器，参数依序为分类函数 `classifier` 与下游收集器 `downstream`。
+得益于 Go 泛型类型推断，多数情况下无需显式指定类型参数。支持与 `ToSliceCollector`、`ToMapByCollector`、`CountCollector` 等自由组合，并支持多级嵌套分组。
 
 ```go
 GroupByCollector[T any, K comparable, R any](classifier func(T) K, downstream Collector[T, R]) Collector[T, map[K]R]
 ```
 
-Example with structured data:
+假设一组货物：
 
 ```go
-// Cargo entity
+// Cargo 货物实体
 type Cargo struct {
 	ID       int
 	Name     string
@@ -152,10 +146,10 @@ input := []*Cargo{
 }
 ```
 
-Single-level and multi-level grouping:
+单级分组与多级分组：
 
 ```go
-// 1. Single grouping: group by Location => map[string][]*Cargo
+// 1. 单级分组: 按 Location 分组 => map[string][]*Cargo
 cargoByLocation := From(input).Collect(
 	GroupByCollector(
 		func(it *Cargo) string { return it.Location },
@@ -163,7 +157,7 @@ cargoByLocation := From(input).Collect(
 	),
 )
 
-// 2. Multi-level grouping: group by Status, then by Location => map[int]map[string][]*Cargo
+// 2. 多级嵌套分组: 先按 Status 分组，再按 Location 分组 => map[int]map[string][]*Cargo
 cargoByStatusByLocation := From(input).Collect(
 	GroupByCollector(
 		func(it *Cargo) int { return it.Status },
@@ -175,9 +169,10 @@ cargoByStatusByLocation := From(input).Collect(
 )
 ```
 
-### Flattening Nested Groups
+### Flatten Group
 
-Combining `FromMap` and `FlatMap`, nested maps can be flattened back into slices (`map[int]map[string][]*Cargo => []*Cargo`) with complete static type safety and zero runtime type assertions:
+结合 `FromMap` 与 `FlatMap`，可将多级分组 Map 结构展开回切片：`map[int]map[string][]*Cargo => []*Cargo`。
+整个过程强类型安全，无任何运行时类型断言：
 
 ```go
 cargos := FromMap(cargoByStatusByLocation).FlatMap(func(kv KeyValue[int, map[string][]*Cargo]) Stream[*Cargo] {
@@ -216,12 +211,10 @@ BenchmarkGroupSumRaw-8                      1020           1104203 ns/op
 BenchmarkGroupSum-8                          100          12056522 ns/op
 PASS
 ok      github.com/a3d21/gostream       26.355s
+
 ```
 
-**Conclusions:**
-1. Compared to raw native operations, streaming abstractions like `ToSlice`, `GroupBy`, and `Sum` have overhead.
-2. In typical business applications where collection sizes are modest (< 1,000 items) and bottlenecked by I/O, the performance difference is practically negligible.
+**结论：**
+1. 与原生操作相比，`ToSlice`、`GroupBy`、`Sum`性能相差较大
+2. 因为一般业务系统数据规模小（< 1000），耗时主要在IO，所以使用gostream可感知的影响不大
 
-## License
-
-[MIT](./LICENSE)

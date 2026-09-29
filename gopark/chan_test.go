@@ -1,7 +1,7 @@
 package gopark
 
 import (
-	. "github.com/a3d21/gostream/core"
+	. "github.com/a3d21/gostream/v2/core"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -18,7 +18,7 @@ func TestBufferChanBySize(t *testing.T) {
 
 	want := [][]int{{0, 1, 2}, {3, 4}}
 	out := BufferChan(in, 3, time.Second)
-	got := From(out).Collect(ToSlice([][]int{}))
+	got := FromChannel(out).ToSlice()
 	assert.Equal(t, want, got)
 }
 
@@ -36,7 +36,7 @@ func TestBufferChanByTimeout(t *testing.T) {
 	}()
 	want := [][]int{{0}, {1, 2}, {3, 4}}
 	out := BufferChan(in, 100, time.Millisecond*300)
-	got := From(out).Collect(ToSlice([][]int{}))
+	got := FromChannel(out).ToSlice()
 	assert.Equal(t, want, got)
 }
 
@@ -51,7 +51,7 @@ func TestBufferChanIntervalBySize(t *testing.T) {
 
 	want := [][]int{{0, 1, 2}, {3, 4}}
 	out := BufferChanInterval(in, 3, time.Second)
-	got := From(out).Collect(ToSlice([][]int{}))
+	got := FromChannel(out).ToSlice()
 	assert.Equal(t, want, got)
 }
 
@@ -69,7 +69,7 @@ func TestBufferChanInterval(t *testing.T) {
 	}()
 	want := [][]int{{0}, {1, 2}, {3, 4}}
 	out := BufferChanInterval(in, 100, time.Millisecond*300)
-	got := From(out).Collect(ToSlice([][]int{}))
+	got := FromChannel(out).ToSlice()
 	assert.Equal(t, want, got)
 }
 
@@ -88,6 +88,6 @@ func TestBufferChanInterval2(t *testing.T) {
 	}()
 	want := [][]int{{0}, {1, 2}, {3, 4}}
 	out := BufferChanInterval(in, 100, time.Millisecond*300)
-	got := From(out).Collect(ToSlice([][]int{}))
+	got := FromChannel(out).ToSlice()
 	assert.Equal(t, want, got)
 }

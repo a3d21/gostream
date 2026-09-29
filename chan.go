@@ -1,22 +1,16 @@
 package gostream
 
 import (
-	"reflect"
 	"time"
 )
 
-// BufferChan 对channel缓存
-// 当接收消息达到`size`或超过`timeout`未收到新消息时，发送消息
-// 参数说明
+// BufferChan buffers channel items based on batch size and inactivity timeout.
+// It emits a batch when the buffer reaches `size` or when no new message is received within `timeout`.
+// Parameters:
 //
-//	typ  slice类型参数
-//	size  缓存数量
-//	timeout  超时时间
-func (s Stream) BufferChan(typ interface{}, size int, timeout time.Duration) Stream {
-	t := reflect.TypeOf(typ)
-	if t.Kind() != reflect.Slice {
-		panic("typ should be slice")
-	}
+//	size     maximum batch size
+//	timeout  inactivity timeout duration
+func BufferChan[T any](s Stream[T], size int, timeout time.Duration) Stream[[]T] {
 	if size <= 0 {
 		panic("size should gt 0")
 	}
@@ -24,59 +18,51 @@ func (s Stream) BufferChan(typ interface{}, size int, timeout time.Duration) Str
 		panic("timeout should gt 0")
 	}
 
-	in := make(chan interface{})
-	out := make(chan interface{})
+	in := make(chan T)
+	out := make(chan []T)
 	go s.OutChan(in)
 
 	go func() {
-		sv := reflect.MakeSlice(t, size, size)
-		idx := 0
+		buf := make([]T, 0, size)
 
-		var flush = func() {
-			out <- sv.Slice(0, idx).Interface()
-			sv = reflect.MakeSlice(t, size, size)
-			idx = 0
+		flush := func() {
+			out <- buf
+			buf = make([]T, 0, size)
 		}
 
 		for {
 			select {
 			case v, ok := <-in:
 				if ok {
-					sv.Index(idx).Set(reflect.ValueOf(v))
-					idx++
-					if idx == size {
+					buf = append(buf, v)
+					if len(buf) == size {
 						flush()
 					}
 				} else {
-					if idx > 0 {
+					if len(buf) > 0 {
 						flush()
 					}
 					close(out)
 					return
 				}
 			case <-time.After(timeout):
-				if idx > 0 {
+				if len(buf) > 0 {
 					flush()
 				}
 			}
 		}
 	}()
 
-	return From(out)
+	return FromChannel(out)
 }
 
-// BufferChanInterval 对channel缓存
-// 当接收消息达到`size`或超过`timeout`未收到新消息时，发送消息
-// 参数说明
+// BufferChanInterval buffers channel items based on batch size and fixed interval.
+// It emits a batch when the buffer reaches `size` or when `interval` elapses.
+// Parameters:
 //
-//	typ  slice类型参数
-//	size  缓存数量
-//	interval  时间窗口
-func (s Stream) BufferChanInterval(typ interface{}, size int, interval time.Duration) Stream {
-	t := reflect.TypeOf(typ)
-	if t.Kind() != reflect.Slice {
-		panic("typ should be slice")
-	}
+//	size      maximum batch size
+//	interval  time window duration
+func BufferChanInterval[T any](s Stream[T], size int, interval time.Duration) Stream[[]T] {
 	if size <= 0 {
 		panic("size should gt 0")
 	}
@@ -84,23 +70,21 @@ func (s Stream) BufferChanInterval(typ interface{}, size int, interval time.Dura
 		panic("interval should gt 0")
 	}
 
-	in := make(chan interface{})
-	out := make(chan interface{})
+	in := make(chan T)
+	out := make(chan []T)
 	go s.OutChan(in)
 
 	go func() {
-		sv := reflect.MakeSlice(t, size, size)
-		idx := 0
+		buf := make([]T, 0, size)
 
-		var after = time.After(time.Hour)
-		var resetAfter = func() {
+		after := time.After(time.Hour)
+		resetAfter := func() {
 			after = time.After(interval)
 		}
 
-		var flush = func() {
-			out <- sv.Slice(0, idx).Interface()
-			sv = reflect.MakeSlice(t, size, size)
-			idx = 0
+		flush := func() {
+			out <- buf
+			buf = make([]T, 0, size)
 			after = time.After(time.Hour)
 		}
 
@@ -108,28 +92,27 @@ func (s Stream) BufferChanInterval(typ interface{}, size int, interval time.Dura
 			select {
 			case v, ok := <-in:
 				if ok {
-					sv.Index(idx).Set(reflect.ValueOf(v))
-					idx++
-					if idx == 1 {
+					buf = append(buf, v)
+					if len(buf) == 1 {
 						resetAfter()
 					}
-					if idx == size {
+					if len(buf) == size {
 						flush()
 					}
 				} else {
-					if idx > 0 {
+					if len(buf) > 0 {
 						flush()
 					}
 					close(out)
 					return
 				}
 			case <-after:
-				if idx > 0 {
+				if len(buf) > 0 {
 					flush()
 				}
 			}
 		}
 	}()
 
-	return From(out)
+	return FromChannel(out)
 }

@@ -1,7 +1,6 @@
 package gostream
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,18 +8,17 @@ import (
 
 func TestEmptyCollectToSliceShouldBeNil(t *testing.T) {
 	var input []int
-	got := From(input).Collect(ToSlice([]int{})).([]int)
+	got := From(input).ToSlice()
 	assert.Nil(t, got)
 	assert.Empty(t, got)
 }
 
 func TestEmptyCollectToMapShouldNotBeNil(t *testing.T) {
 	var input []int
-	got := From(input).Collect(ToMapBy(map[int]int{}, func(v interface{}) interface{} {
-		return v
-	}, func(v interface{}) interface{} {
-		return v
-	})).(map[int]int)
+	got := From(input).Collect(ToMapByCollector(
+		func(v int) int { return v },
+		func(v int) int { return v },
+	))
 
 	assert.NotNil(t, got)
 	assert.Empty(t, got)
@@ -28,35 +26,30 @@ func TestEmptyCollectToMapShouldNotBeNil(t *testing.T) {
 
 func TestCollectToSlice(t *testing.T) {
 	input := []int{1, 2, 3, 4, 5}
-	got := From(input).Collect(ToSlice([]int{}))
-
-	if !reflect.DeepEqual(input, got) {
-		t.Errorf("%v != %v", got, input)
-	}
+	got := From(input).ToSlice()
+	assert.Equal(t, input, got)
 }
 
 func TestCollectToMap(t *testing.T) {
 	input := []int{1, 2, 3}
 	want := map[int]bool{1: true, 2: true, 3: true}
-	got := From(input).Map(func(it interface{}) interface{} {
-		return KeyValue{
+	got := From(input).Map(func(it int) KeyValue[int, bool] {
+		return KeyValue[int, bool]{
 			Key:   it,
 			Value: true,
 		}
-	}).Collect(ToMap(map[int]bool{})).(map[int]bool)
-
+	}).Collect(ToMapCollector[int, bool]())
 	assert.Equal(t, want, got)
 }
 
 func TestCollectToMapBy(t *testing.T) {
 	input := []int{1, 2, 3, 4, 5}
 	want := map[int]int{1: 1, 2: 2, 3: 3, 4: 4, 5: 5}
-	identity := func(it interface{}) interface{} { return it }
-	got := From(input).Collect(ToMapBy(map[int]int{}, identity, identity))
-
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("%v != %v", got, want)
-	}
+	got := From(input).Collect(ToMapByCollector(
+		func(it int) int { return it },
+		func(it int) int { return it },
+	))
+	assert.Equal(t, want, got)
 }
 
 type Cargo struct {
@@ -103,16 +96,14 @@ func TestCollectGroupBy(t *testing.T) {
 		}},
 	}
 
-	getLocation := func(it interface{}) interface{} {
-		return it.(*Cargo).Location
-	}
 	got := From(input).Collect(
-		GroupBy(map[string][]*Cargo{}, getLocation,
-			ToSlice([]*Cargo{}))).(map[string][]*Cargo)
+		GroupByCollector(
+			func(it *Cargo) string { return it.Location },
+			ToSliceCollector[*Cargo](),
+		),
+	)
 
-	if !reflect.DeepEqual(want, got) {
-		t.Errorf("%v != %v", got, want)
-	}
+	assert.Equal(t, want, got)
 }
 
 func TestMultiGroupBy(t *testing.T) {
@@ -165,19 +156,17 @@ func TestMultiGroupBy(t *testing.T) {
 		},
 	}
 
-	getStatus := func(it interface{}) interface{} { return it.(*Cargo).Status }
-	getLocation := func(it interface{}) interface{} { return it.(*Cargo).Location }
-
-	// collect map, group by status,city
-	// result type: map[int]map[string][]*Cargo
 	got := From(input).Collect(
-		GroupBy(map[int]map[string][]*Cargo(nil), getStatus,
-			GroupBy(map[string][]*Cargo(nil), getLocation,
-				ToSlice([]*Cargo(nil)))))
+		GroupByCollector(
+			func(it *Cargo) int { return it.Status },
+			GroupByCollector(
+				func(it *Cargo) string { return it.Location },
+				ToSliceCollector[*Cargo](),
+			),
+		),
+	)
 
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("%v != %v", got, want)
-	}
+	assert.Equal(t, want, got)
 }
 
 func TestCollectorToMap(t *testing.T) {
@@ -204,44 +193,36 @@ func TestCollectorToMap(t *testing.T) {
 		"a3d21": "guangzhou",
 	}
 
-	getLocation := func(it interface{}) interface{} { return it.(*Cargo).Location }
-	getName := func(it interface{}) interface{} { return it.(*Cargo).Name }
-	got := From(input).Collect(ToMapBy(map[string]string{}, getName, getLocation))
-
-	if !reflect.DeepEqual(want, got) {
-		t.Errorf("%v != %v", got, want)
-	}
+	got := From(input).Collect(ToMapByCollector(
+		func(it *Cargo) string { return it.Name },
+		func(it *Cargo) string { return it.Location },
+	))
+	assert.Equal(t, want, got)
 }
 
 func TestCollectToSet(t *testing.T) {
 	input := []int{1, 2, 3}
 	want := map[int]bool{1: true, 2: true, 3: true}
-	got := From(input).Collect(ToSet(map[int]bool{})).(map[int]bool)
+	got := From(input).Collect(ToSetCollector[int]())
 	assert.Equal(t, want, got)
 }
 
 func TestFlatMap(t *testing.T) {
 	input := [][]int{{3, 2, 1}, {6, 5, 4}, {9, 8, 7}}
 	want := []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
-	got := From(input).FlatMap(func(it interface{}) Stream {
+	got := From(input).FlatMap(func(it []int) Stream[int] {
 		return From(it)
-	}).SortedBy(func(it interface{}) interface{} {
+	}).SortedBy(func(it int) int {
 		return it
-	}).Collect(ToSlice([]int{}))
-
-	if !reflect.DeepEqual(want, got) {
-		t.Errorf("%v != %v", got, want)
-	}
+	}).ToSlice()
+	assert.Equal(t, want, got)
 }
 
 func TestCount(t *testing.T) {
 	input := []int{1, 2, 3, 4, 5}
 	want := 5
-	got := From(input).Collect(Count())
-
-	if !reflect.DeepEqual(want, got) {
-		t.Errorf("%v != %v", got, want)
-	}
+	got := From(input).Count()
+	assert.Equal(t, want, got)
 }
 
 func TestGroupCount(t *testing.T) {
@@ -251,23 +232,21 @@ func TestGroupCount(t *testing.T) {
 		false: 2,
 	}
 
-	got := From(input).Collect(GroupBy(want, func(v interface{}) interface{} {
-		return v.(int) < 4
-	}, Count()))
-	if !reflect.DeepEqual(want, got) {
-		t.Errorf("%v != %v", got, want)
-	}
+	got := From(input).Collect(GroupByCollector(
+		func(v int) bool { return v < 4 },
+		CountCollector[int](),
+	))
+	assert.Equal(t, want, got)
 }
 
 func TestCustomAddCollector(t *testing.T) {
 	input := []int{1, 2, 3}
 	want := 1 + 2 + 3
 
-	got := From(input).Collect(CollectBy(func() interface{} {
-		return 0
-	}, func(acc interface{}, item interface{}) interface{} {
-		return acc.(int) + item.(int)
-	}))
+	got := From(input).Collect(CollectBy(
+		func() int { return 0 },
+		func(acc int, item int) int { return acc + item },
+	))
 	assert.Equal(t, want, got)
 }
 
@@ -284,14 +263,12 @@ func TestGroupSum(t *testing.T) {
 		{"bar", 30},
 	}
 	want := map[string]int{"foo": 30, "bar": 45}
-	got := From(input).Collect(GroupBy(map[string]int{},
-		func(it interface{}) interface{} {
-			return it.(AType).Name
-		},
-		CollectBy(func() interface{} {
-			return 0
-		}, func(acc interface{}, item interface{}) interface{} {
-			return acc.(int) + item.(AType).Count
-		}))).(map[string]int)
+	got := From(input).Collect(GroupByCollector(
+		func(it AType) string { return it.Name },
+		CollectBy(
+			func() int { return 0 },
+			func(acc int, item AType) int { return acc + item.Count },
+		),
+	))
 	assert.Equal(t, want, got)
 }

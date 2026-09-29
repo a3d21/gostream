@@ -1,6 +1,6 @@
 package gopark
 
-// PartitionBy 对slice按size分区
+// PartitionBy divides a slice into sub-slices of the specified size.
 func PartitionBy[T any](vs []T, size int) [][]T {
 	if size < 1 {
 		panic("illegal size")

@@ -17,7 +17,7 @@ func TestBufferChanBySize(t *testing.T) {
 	}()
 
 	want := [][]int{{0, 1, 2}, {3, 4}}
-	got := From(in).BufferChan([]int{}, 3, time.Second).Collect(ToSlice([][]int{}))
+	got := BufferChan(FromChannel(in), 3, time.Second).ToSlice()
 	assert.Equal(t, want, got)
 }
 
@@ -34,7 +34,7 @@ func TestBufferChanByTimeout(t *testing.T) {
 		close(in)
 	}()
 	want := [][]int{{0}, {1, 2}, {3, 4}}
-	got := From(in).BufferChan([]int{}, 100, time.Millisecond*300).Collect(ToSlice([][]int{}))
+	got := BufferChan(FromChannel(in), 100, time.Millisecond*300).ToSlice()
 	assert.Equal(t, want, got)
 }
 
@@ -48,7 +48,7 @@ func TestBufferChanIntervalBySize(t *testing.T) {
 	}()
 
 	want := [][]int{{0, 1, 2}, {3, 4}}
-	got := From(in).BufferChan([]int{}, 3, time.Second).Collect(ToSlice([][]int{}))
+	got := BufferChan(FromChannel(in), 3, time.Second).ToSlice()
 	assert.Equal(t, want, got)
 }
 
@@ -65,7 +65,7 @@ func TestBufferChanInterval(t *testing.T) {
 		close(in)
 	}()
 	want := [][]int{{0}, {1, 2}, {3, 4}}
-	got := From(in).BufferChanInterval([]int{}, 100, time.Millisecond*300).Collect(ToSlice([][]int{}))
+	got := BufferChanInterval(FromChannel(in), 100, time.Millisecond*300).ToSlice()
 	assert.Equal(t, want, got)
 }
 
@@ -83,6 +83,6 @@ func TestBufferChanInterval2(t *testing.T) {
 		close(in)
 	}()
 	want := [][]int{{0}, {1, 2}, {3, 4}}
-	got := From(in).BufferChanInterval([]int{}, 100, time.Millisecond*300).Collect(ToSlice([][]int{}))
+	got := BufferChanInterval(FromChannel(in), 100, time.Millisecond*300).ToSlice()
 	assert.Equal(t, want, got)
 }

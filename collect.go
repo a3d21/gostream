@@ -1,122 +1,97 @@
 package gostream
 
-import (
-	"reflect"
-)
+// Collector is a generic collector function.
+type Collector[T any, R any] func(stream Stream[T]) R
 
-var identity = func(it interface{}) interface{} { return it }
+// Collect applies a collector to the stream.
+func (s Stream[T]) Collect[R any](c Collector[T, R]) R {
+	return c(s)
+}
 
-type collector func(stream Stream) interface{}
-
-// C_ is the exported type for `core`, don't use it.
-type C_ = collector
-
-// CollectBy
+// CollectBy creates a collector from a supplier and an accumulator.
 //
 //	supplier: supply the seed
 //	accumulator: accumulate items
-func CollectBy(supplier func() interface{}, accumulator accumulatorFn) collector {
-	return func(s Stream) interface{} {
-		return s.ReduceWith(supplier(), accumulator)
+func CollectBy[T any, R any](supplier func() R, accumulator func(acc R, item T) R) Collector[T, R] {
+	return func(s Stream[T]) R {
+		result := supplier()
+		next := s.Iterate()
+		for current, ok := next(); ok; current, ok = next() {
+			result = accumulator(result, current)
+		}
+		return result
 	}
 }
 
-// Count ...
-func Count() collector {
-	return func(s Stream) interface{} {
+// CountCollector returns a collector that counts stream elements.
+func CountCollector[T any]() Collector[T, int] {
+	return func(s Stream[T]) int {
 		return s.Count()
 	}
 }
 
-// ToSlice 收集器，将item收集为slice。
-// typ为类型参数，允许为nil。 eg: []int{} or []int(nil)
-func ToSlice(typ interface{}) collector {
-	return ToSliceBy(typ, identity)
-}
-
-// ToSliceBy 收集器，将mapper应用于每一个item，再收集结果
-func ToSliceBy(typ interface{}, mapper normalizedFn) collector {
-	t := reflect.TypeOf(typ)
-	if t.Kind() != reflect.Slice {
-		panic("typ should be slice")
-	}
-
-	return func(stream Stream) interface{} {
-		v := reflect.New(t)
-		container := v.Interface()
-		stream.Map(mapper).OutSlice(container)
-		return v.Elem().Interface()
+// ToSliceCollector returns a collector that collects elements into a slice.
+func ToSliceCollector[T any]() Collector[T, []T] {
+	return func(s Stream[T]) []T {
+		return s.ToSlice()
 	}
 }
 
-// ToMap collect to map, item should be KeyValue type
-func ToMap(typ interface{}) collector {
-	return ToMapBy(typ, func(v interface{}) interface{} {
-		return v.(KeyValue).Key
-	}, func(v interface{}) interface{} {
-		return v.(KeyValue).Value
-	})
-}
-
-// ToMapBy ...
-func ToMapBy(typ interface{}, keyMapper, valueMapper normalizedFn) collector {
-	t := reflect.TypeOf(typ)
-	if t.Kind() != reflect.Map {
-		panic("typ should be map")
-	}
-
-	return func(stream Stream) interface{} {
-		v := reflect.New(reflect.MapOf(t.Key(), t.Elem()))
-		v.Elem().Set(reflect.MakeMap(t))
-		container := v.Interface()
-		stream.OutMapBy(container, keyMapper, valueMapper)
-		return v.Elem().Interface()
+// ToMapCollector returns a collector that collects KeyValue elements into a map.
+func ToMapCollector[K comparable, V any]() Collector[KeyValue[K, V], map[K]V] {
+	return func(s Stream[KeyValue[K, V]]) map[K]V {
+		return ToMap(s)
 	}
 }
 
-// ToSet 收集器。收集为map[T]bool
-func ToSet(typ interface{}) collector {
-	t := reflect.TypeOf(typ)
-	if t.Kind() != reflect.Map || t.Elem().Kind() != reflect.Bool {
-		panic("typ should be map[T]bool")
-	}
-
-	return func(stream Stream) interface{} {
-		v := reflect.New(reflect.MapOf(t.Key(), t.Elem()))
-		v.Elem().Set(reflect.MakeMap(t))
-		container := v.Interface()
-		truly := func(_ interface{}) interface{} { return true }
-		stream.OutMapBy(container, identity, truly)
-		return v.Elem().Interface()
+// ToMapByCollector returns a collector that applies key and value mappers and collects into a map.
+func ToMapByCollector[T any, K comparable, V any](keyMapper func(T) K, valueMapper func(T) V) Collector[T, map[K]V] {
+	return func(s Stream[T]) map[K]V {
+		result := make(map[K]V)
+		next := s.Iterate()
+		for item, ok := next(); ok; item, ok = next() {
+			result[keyMapper(item)] = valueMapper(item)
+		}
+		return result
 	}
 }
 
-// GroupBy 分组收集器，将item分组收集。
-// 参数说明：
+// ToSetCollector returns a collector that collects elements into a map[T]bool set.
+func ToSetCollector[T comparable]() Collector[T, map[T]bool] {
+	return func(s Stream[T]) map[T]bool {
+		result := make(map[T]bool)
+		next := s.Iterate()
+		for item, ok := next(); ok; item, ok = next() {
+			result[item] = true
+		}
+		return result
+	}
+}
+
+// GroupByCollector creates a grouping collector.
+// Parameters:
 //
-//	classifier  分组函数
-//	downstream  下游收集器
-func GroupBy(typ interface{}, classifier normalizedFn, downstream collector) collector {
-	t := reflect.TypeOf(typ)
-	if t.Kind() != reflect.Map {
-		panic("typ should be map")
-	}
-
-	return func(stream Stream) interface{} {
-		v := reflect.New(reflect.MapOf(t.Key(), t.Elem()))
-		v.Elem().Set(reflect.MakeMap(t))
-		container := v.Interface()
-		stream.GroupBy(classifier, identity).Map(func(g interface{}) interface{} {
-			return KeyValue{
-				Key:   g.(Group).Key,
-				Value: From(g.(Group).Group).Collect(downstream),
+//	classifier  function to classify items into keys
+//	downstream  collector for grouping downstream items
+func GroupByCollector[T any, K comparable, R any](classifier func(T) K, downstream Collector[T, R]) Collector[T, map[K]R] {
+	return func(s Stream[T]) map[K]R {
+		// Group elements by key
+		groups := make(map[K][]T)
+		var orderedKeys []K
+		next := s.Iterate()
+		for item, ok := next(); ok; item, ok = next() {
+			key := classifier(item)
+			if _, exists := groups[key]; !exists {
+				orderedKeys = append(orderedKeys, key)
 			}
-		}).OutMap(container)
-		return v.Elem().Interface()
-	}
-}
+			groups[key] = append(groups[key], item)
+		}
 
-// Collect ...
-func (s Stream) Collect(c collector) interface{} {
-	return c(s)
+		// Apply downstream collector to each group
+		result := make(map[K]R)
+		for _, key := range orderedKeys {
+			result[key] = downstream(From(groups[key]))
+		}
+		return result
+	}
 }

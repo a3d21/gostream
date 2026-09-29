@@ -8,7 +8,7 @@ import (
 )
 
 func TestDefaultAllShouldBeTrue(t *testing.T) {
-	all := From([]int(nil)).All(func(v interface{}) bool {
+	all := From([]int(nil)).All(func(v int) bool {
 		return false
 	})
 	assert.True(t, all)
@@ -20,7 +20,7 @@ func TestDefaultAnyShouldBeFalse(t *testing.T) {
 }
 
 func TestDefaultAnyWithShouldBeFalse(t *testing.T) {
-	anyWith := From([]int(nil)).AnyWith(func(v interface{}) bool {
+	anyWith := From([]int(nil)).AnyWith(func(v int) bool {
 		return true
 	})
 	assert.False(t, anyWith)
@@ -29,7 +29,7 @@ func TestDefaultAnyWithShouldBeFalse(t *testing.T) {
 func TestNilStream_First(t *testing.T) {
 	v, ok := From([]int(nil)).First()
 	assert.False(t, ok)
-	assert.Nil(t, v)
+	assert.Equal(t, 0, v)
 }
 
 func TestStream_First(t *testing.T) {
@@ -42,7 +42,7 @@ func TestStream_First(t *testing.T) {
 func TestNilStream_Last(t *testing.T) {
 	v, ok := From([]int(nil)).Last()
 	assert.False(t, ok)
-	assert.Nil(t, v)
+	assert.Equal(t, 0, v)
 }
 
 func TestStream_Last(t *testing.T) {
@@ -54,7 +54,7 @@ func TestStream_Last(t *testing.T) {
 
 func TestProcessSucc(t *testing.T) {
 	input := []int{1, 2, 3}
-	err := From(input).Process(func(v interface{}) error {
+	err := From(input).Process(func(v int) error {
 		return nil
 	})
 
@@ -63,8 +63,8 @@ func TestProcessSucc(t *testing.T) {
 
 func TestProcessFail(t *testing.T) {
 	input := []int{1, 2, 3}
-	err := From(input).Process(func(v interface{}) error {
-		if v.(int) > 2 {
+	err := From(input).Process(func(v int) error {
+		if v > 2 {
 			return errors.New("some err")
 		}
 		return nil
@@ -72,10 +72,10 @@ func TestProcessFail(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func TestOutChanT(t *testing.T) {
+func TestOutChan(t *testing.T) {
 	input := []int{1, 2, 3}
 	ch := make(chan int, 3)
-	From(input).OutChanT(ch)
+	From(input).OutChan(ch)
 
 	var got []int
 	for v := range ch {

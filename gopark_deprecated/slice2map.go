@@ -9,7 +9,7 @@ var (
 	trueVal = reflect.ValueOf(true)
 )
 
-// Slice2Map 将[]T转成map[T]bool，且值为true
+// Slice2Map converts []T to map[T]bool with all values set to true.
 func Slice2Map(vs interface{}) interface{} {
 	t := reflect.TypeOf(vs)
 	if t.Kind() != reflect.Slice {

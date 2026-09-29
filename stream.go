@@ -1,85 +1,49 @@
 package gostream
 
-// Range make a int-range stream from `start` to `end`, aka [start, end).
-func Range(start, end int) Stream {
-	return Stream{
-		Iterate: func() Iterator {
-			current := start
-			return func() (item interface{}, ok bool) {
-				if current >= end {
-					return nil, false
-				}
-				item, ok = current, true
-
-				current++
-				return
-			}
-		},
-	}
-}
-
-// Repeat ...
-func Repeat(value interface{}, count int) Stream {
-	return Stream{
-		Iterate: func() Iterator {
-			index := 0
-
-			return func() (item interface{}, ok bool) {
-				if index >= count {
-					return nil, false
-				}
-
-				item, ok = value, true
-
-				index++
-				return
-			}
-		},
-	}
-}
-
-// Map ...
-func (s Stream) Map(mapper normalizedFn) Stream {
-	return Stream{
-		Iterate: func() Iterator {
+// Map applies a mapping function to each element, producing a new Stream.
+func (s Stream[T]) Map[U any](mapper func(T) U) Stream[U] {
+	return Stream[U]{
+		Iterate: func() Iterator[U] {
 			next := s.Iterate()
 
-			return func() (item interface{}, ok bool) {
-				var it interface{}
+			return func() (item U, ok bool) {
+				var it T
 				it, ok = next()
 				if ok {
 					item = mapper(it)
 				}
-
 				return
 			}
 		},
 	}
 }
 
-// FlatMap projects each element of a collection to a Query, iterates and
-// flattens the resulting collection into one collection.
-func (s Stream) FlatMap(selector func(interface{}) Stream) Stream {
-	return Stream{
-		Iterate: func() Iterator {
+// FlatMap projects each element of a stream to a Stream, iterates and
+// flattens the resulting streams into one stream.
+func (s Stream[T]) FlatMap[U any](selector func(T) Stream[U]) Stream[U] {
+	return Stream[U]{
+		Iterate: func() Iterator[U] {
 			outernext := s.Iterate()
-			var inner interface{}
-			var innernext Iterator
+			var hasInner bool
+			var innernext Iterator[U]
 
-			return func() (item interface{}, ok bool) {
+			return func() (item U, ok bool) {
 				for !ok {
-					if inner == nil {
-						inner, ok = outernext()
+					if !hasInner {
+						var outer T
+						outer, ok = outernext()
 						if !ok {
 							return
 						}
 
-						innernext = selector(inner).Iterate()
+						innernext = selector(outer).Iterate()
+						hasInner = true
+						ok = false
 					}
 
 					item, ok = innernext()
 					if !ok {
-						inner = nil
+						hasInner = false
 					}
 				}
 
@@ -89,32 +53,31 @@ func (s Stream) FlatMap(selector func(interface{}) Stream) Stream {
 	}
 }
 
-// Filter ...
-func (s Stream) Filter(predicate func(interface{}) bool) Stream {
-	return Stream{
-		Iterate: func() Iterator {
+// Filter returns a stream containing only elements matching the predicate.
+func (s Stream[T]) Filter(predicate func(T) bool) Stream[T] {
+	return Stream[T]{
+		Iterate: func() Iterator[T] {
 			next := s.Iterate()
 
-			return func() (item interface{}, ok bool) {
+			return func() (item T, ok bool) {
 				for item, ok = next(); ok; item, ok = next() {
 					if predicate(item) {
 						return
 					}
 				}
-
 				return
 			}
 		},
 	}
 }
 
-// Peek ...
-func (s Stream) Peek(fn func(interface{})) Stream {
-	return Stream{
-		Iterate: func() Iterator {
+// Peek applies a function to each element without modifying the stream.
+func (s Stream[T]) Peek(fn func(T)) Stream[T] {
+	return Stream[T]{
+		Iterate: func() Iterator[T] {
 			next := s.Iterate()
 
-			return func() (item interface{}, ok bool) {
+			return func() (item T, ok bool) {
 				item, ok = next()
 				if ok {
 					fn(item)
@@ -125,82 +88,79 @@ func (s Stream) Peek(fn func(interface{})) Stream {
 	}
 }
 
-// Distinct ...
-func (s Stream) Distinct() Stream {
-	return Stream{
-		Iterate: func() Iterator {
+// Distinct removes duplicate elements from the stream.
+// T must be comparable.
+func (s Stream[T]) Distinct() Stream[T] {
+	return Stream[T]{
+		Iterate: func() Iterator[T] {
 			next := s.Iterate()
-			set := make(map[interface{}]bool)
+			set := make(map[any]bool)
 
-			return func() (item interface{}, ok bool) {
+			return func() (item T, ok bool) {
 				for item, ok = next(); ok; item, ok = next() {
 					if _, has := set[item]; !has {
 						set[item] = true
 						return
 					}
 				}
-
 				return
 			}
 		},
 	}
 }
 
-// DistinctBy 除重
-func (s Stream) DistinctBy(selector normalizedFn) Stream {
-	return Stream{
-		Iterate: func() Iterator {
+// DistinctBy removes duplicates based on a key selector.
+func (s Stream[T]) DistinctBy[K comparable](selector func(T) K) Stream[T] {
+	return Stream[T]{
+		Iterate: func() Iterator[T] {
 			next := s.Iterate()
-			set := make(map[interface{}]bool)
+			set := make(map[K]bool)
 
-			return func() (item interface{}, ok bool) {
+			return func() (item T, ok bool) {
 				for item, ok = next(); ok; item, ok = next() {
-					s := selector(item)
-					if _, has := set[s]; !has {
-						set[s] = true
+					key := selector(item)
+					if _, has := set[key]; !has {
+						set[key] = true
 						return
 					}
 				}
-
 				return
 			}
 		},
 	}
 }
 
-// Drop 丢弃前n项
-func (s Stream) Drop(n int) Stream {
-	return Stream{
-		Iterate: func() Iterator {
+// Drop skips the first n items in the stream.
+func (s Stream[T]) Drop(n int) Stream[T] {
+	return Stream[T]{
+		Iterate: func() Iterator[T] {
 			next := s.Iterate()
 			c := n
 
-			return func() (item interface{}, ok bool) {
+			return func() (item T, ok bool) {
 				for ; c > 0; c-- {
 					item, ok = next()
 					if !ok {
 						return
 					}
 				}
-
 				return next()
 			}
 		},
 	}
 }
 
-// Limit 限制长多n项
-func (s Stream) Limit(n int) Stream {
-	return Stream{
-		Iterate: func() Iterator {
+// Limit truncates the stream to at most n items.
+func (s Stream[T]) Limit(n int) Stream[T] {
+	return Stream[T]{
+		Iterate: func() Iterator[T] {
 			next := s.Iterate()
 			c := n
 
-			return func() (item interface{}, ok bool) {
+			return func() (item T, ok bool) {
 				if c <= 0 {
 					return
 				}
-
 				c--
 				return next()
 			}

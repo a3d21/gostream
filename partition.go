@@ -1,38 +1,28 @@
 package gostream
 
-import (
-	"reflect"
-)
-
-// Partition 将Stream按size分区
-func (s Stream) Partition(typ interface{}, size int) Stream {
+// Partition divides the stream into chunks of the given size.
+func Partition[T any](s Stream[T], size int) Stream[[]T] {
 	if size < 1 {
 		panic("invalid partition size")
 	}
-	t := reflect.TypeOf(typ)
-	if t.Kind() != reflect.Slice {
-		panic("typ should be slice")
-	}
 
-	return Stream{
-		Iterate: func() Iterator {
+	return Stream[[]T]{
+		Iterate: func() Iterator[[]T] {
 			next := s.Iterate()
 
-			return func() (interface{}, bool) {
-				sv := reflect.MakeSlice(t, size, size)
+			return func() ([]T, bool) {
+				batch := make([]T, 0, size)
 
-				idx := 0
-				for idx < size {
+				for len(batch) < size {
 					if it, ok := next(); ok {
-						sv.Index(idx).Set(reflect.ValueOf(it))
-						idx++
+						batch = append(batch, it)
 					} else {
 						break
 					}
 				}
 
-				if idx > 0 {
-					return sv.Slice(0, idx).Interface(), true
+				if len(batch) > 0 {
+					return batch, true
 				}
 
 				return nil, false

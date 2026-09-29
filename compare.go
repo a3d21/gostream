@@ -2,8 +2,6 @@ package gostream
 
 // fork from go-linq
 
-type comparer func(interface{}, interface{}) int
-
 // Comparable is an interface that has to be implemented by a custom collection
 // elements in order to work with gostream.
 //
@@ -24,11 +22,11 @@ type Comparable interface {
 	CompareTo(Comparable) int
 }
 
-func getComparer(data interface{}) comparer {
-	switch data.(type) {
+func getComparer[T comparable](data T) func(T, T) int {
+	switch any(data).(type) {
 	case int:
-		return func(x, y interface{}) int {
-			a, b := x.(int), y.(int)
+		return func(x, y T) int {
+			a, b := any(x).(int), any(y).(int)
 			switch {
 			case a > b:
 				return 1
@@ -39,8 +37,8 @@ func getComparer(data interface{}) comparer {
 			}
 		}
 	case int8:
-		return func(x, y interface{}) int {
-			a, b := x.(int8), y.(int8)
+		return func(x, y T) int {
+			a, b := any(x).(int8), any(y).(int8)
 			switch {
 			case a > b:
 				return 1
@@ -51,8 +49,8 @@ func getComparer(data interface{}) comparer {
 			}
 		}
 	case int16:
-		return func(x, y interface{}) int {
-			a, b := x.(int16), y.(int16)
+		return func(x, y T) int {
+			a, b := any(x).(int16), any(y).(int16)
 			switch {
 			case a > b:
 				return 1
@@ -63,8 +61,8 @@ func getComparer(data interface{}) comparer {
 			}
 		}
 	case int32:
-		return func(x, y interface{}) int {
-			a, b := x.(int32), y.(int32)
+		return func(x, y T) int {
+			a, b := any(x).(int32), any(y).(int32)
 			switch {
 			case a > b:
 				return 1
@@ -75,8 +73,8 @@ func getComparer(data interface{}) comparer {
 			}
 		}
 	case int64:
-		return func(x, y interface{}) int {
-			a, b := x.(int64), y.(int64)
+		return func(x, y T) int {
+			a, b := any(x).(int64), any(y).(int64)
 			switch {
 			case a > b:
 				return 1
@@ -87,8 +85,8 @@ func getComparer(data interface{}) comparer {
 			}
 		}
 	case uint:
-		return func(x, y interface{}) int {
-			a, b := x.(uint), y.(uint)
+		return func(x, y T) int {
+			a, b := any(x).(uint), any(y).(uint)
 			switch {
 			case a > b:
 				return 1
@@ -99,8 +97,8 @@ func getComparer(data interface{}) comparer {
 			}
 		}
 	case uint8:
-		return func(x, y interface{}) int {
-			a, b := x.(uint8), y.(uint8)
+		return func(x, y T) int {
+			a, b := any(x).(uint8), any(y).(uint8)
 			switch {
 			case a > b:
 				return 1
@@ -111,8 +109,8 @@ func getComparer(data interface{}) comparer {
 			}
 		}
 	case uint16:
-		return func(x, y interface{}) int {
-			a, b := x.(uint16), y.(uint16)
+		return func(x, y T) int {
+			a, b := any(x).(uint16), any(y).(uint16)
 			switch {
 			case a > b:
 				return 1
@@ -123,8 +121,8 @@ func getComparer(data interface{}) comparer {
 			}
 		}
 	case uint32:
-		return func(x, y interface{}) int {
-			a, b := x.(uint32), y.(uint32)
+		return func(x, y T) int {
+			a, b := any(x).(uint32), any(y).(uint32)
 			switch {
 			case a > b:
 				return 1
@@ -135,8 +133,8 @@ func getComparer(data interface{}) comparer {
 			}
 		}
 	case uint64:
-		return func(x, y interface{}) int {
-			a, b := x.(uint64), y.(uint64)
+		return func(x, y T) int {
+			a, b := any(x).(uint64), any(y).(uint64)
 			switch {
 			case a > b:
 				return 1
@@ -147,8 +145,8 @@ func getComparer(data interface{}) comparer {
 			}
 		}
 	case float32:
-		return func(x, y interface{}) int {
-			a, b := x.(float32), y.(float32)
+		return func(x, y T) int {
+			a, b := any(x).(float32), any(y).(float32)
 			switch {
 			case a > b:
 				return 1
@@ -159,8 +157,8 @@ func getComparer(data interface{}) comparer {
 			}
 		}
 	case float64:
-		return func(x, y interface{}) int {
-			a, b := x.(float64), y.(float64)
+		return func(x, y T) int {
+			a, b := any(x).(float64), any(y).(float64)
 			switch {
 			case a > b:
 				return 1
@@ -171,8 +169,8 @@ func getComparer(data interface{}) comparer {
 			}
 		}
 	case string:
-		return func(x, y interface{}) int {
-			a, b := x.(string), y.(string)
+		return func(x, y T) int {
+			a, b := any(x).(string), any(y).(string)
 			switch {
 			case a > b:
 				return 1
@@ -183,8 +181,8 @@ func getComparer(data interface{}) comparer {
 			}
 		}
 	case bool:
-		return func(x, y interface{}) int {
-			a, b := x.(bool), y.(bool)
+		return func(x, y T) int {
+			a, b := any(x).(bool), any(y).(bool)
 			switch {
 			case a == b:
 				return 0
@@ -195,16 +193,16 @@ func getComparer(data interface{}) comparer {
 			}
 		}
 	default:
-		return func(x, y interface{}) int {
-			a, b := x.(Comparable), y.(Comparable)
+		return func(x, y T) int {
+			a, b := any(x).(Comparable), any(y).(Comparable)
 			return a.CompareTo(b)
 		}
 	}
 }
 
-// GTuple 通用Tuple，可比较
-// 依序比较每一个元素。空的GTuple最小
-type GTuple []interface{}
+// GTuple is a generic comparable tuple.
+// It compares elements in sequence. An empty GTuple is considered the smallest.
+type GTuple []any
 
 func (l1 GTuple) CompareTo(l2 Comparable) int {
 	a, b := l1, l2.(GTuple)

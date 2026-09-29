@@ -1,24 +1,28 @@
 package gostream
 
 import (
-	"github.com/a3d21/gostream/gopark"
-	"reflect"
+	"github.com/a3d21/gostream/v2/gopark"
 	"sort"
 	"testing"
 	"testing/quick"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSlice2MapSpec(t *testing.T) {
 	assertion := func(vs []int) bool {
-		m1 := From(vs).Map(func(it interface{}) interface{} {
-			return KeyValue{
-				Key:   it,
-				Value: true,
-			}
-		}).Collect(ToMap(map[int]bool{})).(map[int]bool)
+		m1 := From(vs).Collect(ToSetCollector[int]())
 		m2 := gopark.Slice2Map(vs)
 
-		return reflect.DeepEqual(m1, m2)
+		if len(m1) != len(m2) {
+			return false
+		}
+		for k, v := range m1 {
+			if m2[k] != v {
+				return false
+			}
+		}
+		return true
 	}
 	if err := quick.Check(assertion, &quick.Config{MaxCount: 2000}); err != nil {
 		t.Error(err)
@@ -27,10 +31,18 @@ func TestSlice2MapSpec(t *testing.T) {
 
 func TestToSetSpec(t *testing.T) {
 	assertion := func(vs []int) bool {
-		m1 := From(vs).Collect(ToSet(map[int]bool{})).(map[int]bool)
+		m1 := From(vs).Collect(ToSetCollector[int]())
 		m2 := gopark.Slice2Map(vs)
 
-		return reflect.DeepEqual(m1, m2)
+		if len(m1) != len(m2) {
+			return false
+		}
+		for k, v := range m1 {
+			if m2[k] != v {
+				return false
+			}
+		}
+		return true
 	}
 	if err := quick.Check(assertion, &quick.Config{MaxCount: 2000}); err != nil {
 		t.Error(err)
@@ -39,13 +51,14 @@ func TestToSetSpec(t *testing.T) {
 
 func TestKeysSpec(t *testing.T) {
 	assertion := func(m map[string]int64) bool {
-		s1 := From(m).Map(func(kv interface{}) interface{} {
-			return kv.(KeyValue).Key
-		}).SortedBy(identity).Collect(ToSlice([]string{})).([]string)
+		kvs := FromMap(m)
+		s1 := kvs.Map(func(kv KeyValue[string, int64]) string {
+			return kv.Key
+		}).SortedBy(func(s string) string { return s }).ToSlice()
 
 		s2 := gopark.Keys(m)
 		sort.Strings(s2)
-		return reflect.DeepEqual(s1, s2) || (len(s1) == 0 && len(s2) == 0)
+		return assert.ObjectsAreEqual(s1, s2) || (len(s1) == 0 && len(s2) == 0)
 	}
 
 	if err := quick.Check(assertion, &quick.Config{MaxCount: 2000}); err != nil {
@@ -55,70 +68,17 @@ func TestKeysSpec(t *testing.T) {
 
 func TestValuesSpec(t *testing.T) {
 	assertion := func(m map[string]int) bool {
-		s1 := From(m).Map(func(kv interface{}) interface{} {
-			return kv.(KeyValue).Value
-		}).SortedBy(identity).Collect(ToSlice([]int{})).([]int)
+		kvs := FromMap(m)
+		s1 := kvs.Map(func(kv KeyValue[string, int]) int {
+			return kv.Value
+		}).SortedBy(func(i int) int { return i }).ToSlice()
 
 		s2 := gopark.Values(m)
 		sort.Ints(s2)
-		return reflect.DeepEqual(s1, s2) || (len(s1) == 0 && len(s2) == 0)
+		return assert.ObjectsAreEqual(s1, s2) || (len(s1) == 0 && len(s2) == 0)
 	}
 
 	if err := quick.Check(assertion, &quick.Config{MaxCount: 2000}); err != nil {
 		t.Error(err)
 	}
 }
-
-/**
-func TestMultiSortSpec(t *testing.T) {
-	type foo struct {
-		I    int
-		I32  int32
-		UI64 uint64
-		F32  float32
-		S    string
-		B    bool
-	}
-
-	assertion := func(vs []foo) bool {
-
-		vs = From(vs).Map(func(t interface{}) interface{} {
-			f := t.(foo)
-			return foo{
-				I:    f.I % 20,
-				I32:  f.I32 % 20,
-				UI64: f.UI64 % 20,
-				F32:  f.F32,
-				S:    f.S,
-				B:    f.B,
-			}
-		}).Collect(ToSlice([]foo{})).([]foo)
-
-		got1 := From(vs).SortedBy(func(t interface{}) interface{} {
-			f := t.(foo)
-			return GTuple{f.I, f.I32, f.UI64, f.F32, f.S, f.B}
-		}).Collect(ToSlice([]foo{})).([]foo)
-
-		var got2 []foo
-		linq.From(vs).OrderByT(func(f foo) interface{} {
-			return f.I
-		}).ThenByT(func(f foo) interface{} {
-			return f.I32
-		}).ThenByT(func(f foo) interface{} {
-			return f.UI64
-		}).ThenByT(func(f foo) interface{} {
-			return f.F32
-		}).ThenByT(func(f foo) interface{} {
-			return f.S
-		}).ThenByT(func(f foo) interface{} {
-			return f.B
-		}).ToSlice(&got2)
-
-		return reflect.DeepEqual(got1, got2)
-	}
-
-	if err := quick.Check(assertion, &quick.Config{MaxCount: 5000}); err != nil {
-		t.Error(err)
-	}
-
-}*/

@@ -1,6 +1,6 @@
 package gopark
 
-// Slice2Map 将[]T转成map[T]bool，且值为true
+// Slice2Map converts []T to map[T]bool with all values set to true.
 func Slice2Map[T comparable](vs []T) map[T]bool {
 	m := map[T]bool{}
 	for _, v := range vs {

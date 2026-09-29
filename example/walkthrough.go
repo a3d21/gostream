@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	. "github.com/a3d21/gostream"
+	. "github.com/a3d21/gostream/v2"
 )
 
 func walkthrough() {
@@ -15,8 +15,8 @@ func walkthrough() {
 	// 6,7,8,
 	fmt.Println("example 01")
 	input1 := []int{1, 2, 3, 4, 5, 6, 7, 8}
-	From(input1).Filter(func(it interface{}) bool { return it.(int) > 5 }).
-		ForEach(func(it interface{}) {
+	From(input1).Filter(func(it int) bool { return it > 5 }).
+		ForEach(func(it int) {
 			fmt.Printf("%v,", it)
 		})
 	fmt.Println()
@@ -26,24 +26,19 @@ func walkthrough() {
 	// c => 3,d => 4,
 	fmt.Println("example 02")
 	input2 := map[string]int{"a": 1, "b": 2, "c": 3, "d": 4}
-	From(input2).Filter(func(it interface{}) bool { return it.(KeyValue).Value.(int) > 2 }).
-		ForEach(func(it interface{}) {
-			v := it.(KeyValue) // type: KeyValue
-			fmt.Printf("%v => %v,", v.Key, v.Value)
+	FromMap(input2).Filter(func(it KeyValue[string, int]) bool { return it.Value > 2 }).
+		ForEach(func(it KeyValue[string, int]) {
+			fmt.Printf("%v => %v,", it.Key, it.Value)
 		})
 	fmt.Println()
 
 	// 3. Collect to Slice
-	// got3，anotherGot3 类型不同
 	input3 := []int{1, 3, 5, 7, 9}
-	got3 := From(input3).Collect(ToSlice([]int(nil))) // 说明：受限于Go类型系统，需要显示传类型参数`[]int(nil)`，即[]int类型的nil
-	anotherGot4 := From(input3).Collect(ToSlice([]interface{}(nil)))
-	_ = got3.([]int)
-	_ = anotherGot4.([]interface{})
+	got3 := From(input3).ToSlice()
 	assertEqual(input3, got3)
 
 	// 4. Collect to Map by Code, result type: map[int64]*Cargo
-	// 假设一组货物
+	// Assume a collection of cargos
 	cargos := []*Cargo{{
 		Code:     1000,
 		Location: "shenzhen",
@@ -114,9 +109,10 @@ func walkthrough() {
 		},
 	}
 
-	getCode := func(it interface{}) interface{} { return it.(*Cargo).Code }
-	identity := func(it interface{}) interface{} { return it }
-	code2CargoMap := From(cargos).Collect(ToMapBy(map[int64]*Cargo(nil), getCode, identity)).(map[int64]*Cargo)
+	code2CargoMap := From(cargos).Collect(ToMapByCollector(
+		func(it *Cargo) int64 { return it.Code },
+		func(it *Cargo) *Cargo { return it },
+	))
 	assertEqual(code2CargoMap, wantCargoMap)
 
 	// 5. Group by Location, result type: map[string][]*Cargo
@@ -156,53 +152,64 @@ func walkthrough() {
 			Created:  "2021-02-01 13:00:00",
 		}},
 	}
-	getLocation := func(it interface{}) interface{} { return it.(*Cargo).Location }
 	cargoByLocation := From(cargos).Collect(
-		GroupBy(map[string][]*Cargo(nil), getLocation,
-			ToSlice([]*Cargo(nil))))
-
+		GroupByCollector(
+			func(it *Cargo) string { return it.Location },
+			ToSliceCollector[*Cargo](),
+		),
+	)
 	assertEqual(cargoByLocation, wantCargoByLocation)
 
-	// 6. 分组成Map result type: map[string]map[int64]*Cargo
+	// 6. Group into nested map, result type: map[string]map[int64]*Cargo
 	location2code2cargomap := From(cargos).Collect(
-		GroupBy(map[string]map[int64]*Cargo(nil), getLocation,
-			ToMapBy(map[int64]*Cargo(nil), getCode, identity)))
+		GroupByCollector(
+			func(it *Cargo) string { return it.Location },
+			ToMapByCollector(
+				func(it *Cargo) int64 { return it.Code },
+				func(it *Cargo) *Cargo { return it },
+			),
+		),
+	)
 
-	// 7. 多重分组，by Location, To, result Type: map[string]map[string][]*Cargo
-	getTo := func(it interface{}) interface{} { return it.(*Cargo).To }
+	// 7. Multi-level grouping by Location and To, result type: map[string]map[string][]*Cargo
 	cargoByLocationByTo := From(cargos).Collect(
-		GroupBy(map[string]map[string][]*Cargo(nil), getLocation,
-			GroupBy(map[string][]*Cargo(nil), getTo,
-				ToSlice([]*Cargo(nil)))))
+		GroupByCollector(
+			func(it *Cargo) string { return it.Location },
+			GroupByCollector(
+				func(it *Cargo) string { return it.To },
+				ToSliceCollector[*Cargo](),
+			),
+		),
+	)
 
-	// okok, 看了这么多分组Collect后，让我们把数据转换成Slice吧
-	// 8. Map[int64]*Cargo => []*Cargo, use Map
+	// Flatten grouped maps back into slice
+	// 8. Map[int64]*Cargo => []*Cargo, use FromMap + Map
 	assertEqual(cargos,
-		From(code2CargoMap).Map(func(it interface{}) interface{} {
-			return it.(KeyValue).Value
-		}).SortedBy(getCode).Collect(ToSlice([]*Cargo{})))
+		FromMap(code2CargoMap).Map(func(kv KeyValue[int64, *Cargo]) *Cargo {
+			return kv.Value
+		}).SortedBy(func(it *Cargo) int64 { return it.Code }).ToSlice())
 
-	// 9. map[string][]*Cargo => []*Cargo， use FlatMap
+	// 9. map[string][]*Cargo => []*Cargo, use FromMap + FlatMap
 	assertEqual(cargos,
-		From(cargoByLocation).FlatMap(func(it interface{}) Stream {
-			return From(it.(KeyValue).Value)
-		}).SortedBy(getCode).Collect(ToSlice([]*Cargo{})))
+		FromMap(cargoByLocation).FlatMap(func(kv KeyValue[string, []*Cargo]) Stream[*Cargo] {
+			return From(kv.Value)
+		}).SortedBy(func(it *Cargo) int64 { return it.Code }).ToSlice())
 
 	// 10. map[string]map[string][]*Cargo => []*Cargo, double FlatMap
 	assertEqual(cargos,
-		From(cargoByLocationByTo).FlatMap(func(it interface{}) Stream {
-			return From(it.(KeyValue).Value).FlatMap(func(it2 interface{}) Stream {
-				return From(it2.(KeyValue).Value)
+		FromMap(cargoByLocationByTo).FlatMap(func(kv KeyValue[string, map[string][]*Cargo]) Stream[*Cargo] {
+			return FromMap(kv.Value).FlatMap(func(kv2 KeyValue[string, []*Cargo]) Stream[*Cargo] {
+				return From(kv2.Value)
 			})
-		}).SortedBy(getCode).Collect(ToSlice([]*Cargo{})))
+		}).SortedBy(func(it *Cargo) int64 { return it.Code }).ToSlice())
 
 	// 11. map[string]map[int64]*Cargo => []*Cargo, FlatMap + Map
 	assertEqual(cargos,
-		From(location2code2cargomap).FlatMap(func(it interface{}) Stream {
-			return From(it.(KeyValue).Value).Map(func(it2 interface{}) interface{} {
-				return it2.(KeyValue).Value
+		FromMap(location2code2cargomap).FlatMap(func(kv KeyValue[string, map[int64]*Cargo]) Stream[*Cargo] {
+			return FromMap(kv.Value).Map(func(kv2 KeyValue[int64, *Cargo]) *Cargo {
+				return kv2.Value
 			})
-		}).SortedBy(getCode).Collect(ToSlice([]*Cargo{})))
+		}).SortedBy(func(it *Cargo) int64 { return it.Code }).ToSlice())
 }
 
 // Cargo

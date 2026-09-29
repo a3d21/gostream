@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-// BufferChan 将chan数据按数量和超时条件缓存，用于批量操作优化。 session-window
+// BufferChan buffers channel items based on batch size and inactivity timeout for batch operations (session window).
 func BufferChan[T any](in chan T, size int, timeout time.Duration) (out chan []T) {
 	out = make(chan []T)
 
@@ -49,7 +49,7 @@ func BufferChan[T any](in chan T, size int, timeout time.Duration) (out chan []T
 	return
 }
 
-// BufferChanInterval 将chan数据按数量和时间间隔缓存，用于批量操作优化。sliding-window
+// BufferChanInterval buffers channel items based on batch size and fixed interval for batch operations (sliding/tumbling window).
 func BufferChanInterval[T any](in chan T, size int, interval time.Duration) (out chan []T) {
 	out = make(chan []T)
 

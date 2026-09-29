@@ -9,13 +9,6 @@ const (
 	groups = 100
 )
 
-// intGroupBy group by it%count
-func intGroupBy(count int) func(it interface{}) interface{} {
-	return func(it interface{}) interface{} {
-		return it.(int) % count
-	}
-}
-
 ////// ToSlice
 
 func BenchmarkToSliceRaw(b *testing.B) {
@@ -30,15 +23,15 @@ func BenchmarkToSliceRaw(b *testing.B) {
 func BenchmarkToSliceStreamForeach(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		c := make([]int, 0, size)
-		Range(0, size).ForEach(func(it interface{}) {
-			c = append(c, it.(int))
+		Range(0, size).ForEach(func(it int) {
+			c = append(c, it)
 		})
 	}
 }
 
 func BenchmarkCollectToSlice(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		Range(0, size).Collect(ToSlice([]int(nil)))
+		Range(0, size).ToSlice()
 	}
 }
 
@@ -54,9 +47,11 @@ func BenchmarkToMapRaw(b *testing.B) {
 }
 
 func BenchmarkCollectToMap(b *testing.B) {
-	identity := func(it interface{}) interface{} { return it }
 	for i := 0; i < b.N; i++ {
-		Range(0, size).Collect(ToMapBy(map[int]int(nil), intGroupBy(groups), identity))
+		Range(0, size).Collect(ToMapByCollector(
+			func(it int) int { return it % groups },
+			func(it int) int { return it },
+		))
 	}
 }
 
@@ -73,7 +68,7 @@ func BenchmarkToSetRaw(b *testing.B) {
 
 func BenchmarkCollectToSet(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		Range(0, size).Collect(ToSet(map[int]bool(nil)))
+		Range(0, size).Collect(ToSetCollector[int]())
 	}
 }
 
@@ -96,13 +91,16 @@ func BenchmarkGroupByRaw(b *testing.B) {
 
 func BenchmarkGroupBy(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		Range(0, size).Collect(GroupBy(map[int][]int(nil), intGroupBy(groups), ToSlice([]int(nil))))
+		Range(0, size).Collect(GroupByCollector(
+			func(it int) int { return it % groups },
+			ToSliceCollector[int](),
+		))
 	}
 }
 
 func BenchmarkPartition(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		Range(0, size).Partition([]int(nil), 3).Last()
+		Partition(Range(0, size), 3).Last()
 	}
 }
 
@@ -114,13 +112,16 @@ func BenchmarkCountRaw(b *testing.B) {
 
 func BenchmarkCount(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		Range(0, size).Collect(Count())
+		Range(0, size).Collect(CountCollector[int]())
 	}
 }
 
 func BenchmarkGroupCount(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		Range(0, size).Collect(GroupBy(map[int]int(nil), intGroupBy(groups), Count()))
+		Range(0, size).Collect(GroupByCollector(
+			func(it int) int { return it % groups },
+			CountCollector[int](),
+		))
 	}
 }
 
@@ -135,11 +136,10 @@ func BenchmarkSumRaw(b *testing.B) {
 
 func BenchmarkCustomSumCollector(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		Range(0, size).Collect(CollectBy(func() interface{} {
-			return 0
-		}, func(acc interface{}, item interface{}) interface{} {
-			return acc.(int) + item.(int)
-		}))
+		Range(0, size).Collect(CollectBy(
+			func() int { return 0 },
+			func(acc int, item int) int { return acc + item },
+		))
 	}
 }
 
@@ -155,12 +155,12 @@ func BenchmarkGroupSumRaw(b *testing.B) {
 
 func BenchmarkGroupSum(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		Range(0, size).Collect(GroupBy(map[int]int{},
-			intGroupBy(groups),
-			CollectBy(func() interface{} {
-				return 0
-			}, func(acc interface{}, item interface{}) interface{} {
-				return acc.(int) + item.(int)
-			})))
+		Range(0, size).Collect(GroupByCollector(
+			func(it int) int { return it % groups },
+			CollectBy(
+				func() int { return 0 },
+				func(acc int, item int) int { return acc + item },
+			),
+		))
 	}
 }
